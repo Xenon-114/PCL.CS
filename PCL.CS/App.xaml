@@ -1,0 +1,16 @@
+﻿<Application x:Class="PCL.CS.App"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:local="clr-namespace:PCL.CS.Controls"
+             xmlns:sys="clr-namespace:System;assembly=mscorlib"
+             xmlns:page="clr-namespace:PCL.CS.Pages"
+             StartupUri="MainWindow.xaml">
+    <Application.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="/Colors.xaml"/>
+                <ResourceDictionary Source="/Controls/ControlTheme.xaml"/>
+            </ResourceDictionary.MergedDictionaries>
+        </ResourceDictionary>
+    </Application.Resources>
+</Application>

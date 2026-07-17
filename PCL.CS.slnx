@@ -1,0 +1,13 @@
+<Solution>
+  <Configurations>
+    <BuildType Name="Alpha" />
+    <BuildType Name="Beta" />
+    <BuildType Name="Debug" />
+    <BuildType Name="Release" />
+  </Configurations>
+  <Project Path="../XeF4Core/XeF4Core/XeF4Core.csproj">
+    <BuildType Solution="Alpha|*" Project="Debug" />
+    <BuildType Solution="Beta|*" Project="Debug" />
+  </Project>
+  <Project Path="PCL.CS/PCL.CS.csproj" Id="6c0f302e-636d-4fcf-9534-7ed36aa73bd8" />
+</Solution>
