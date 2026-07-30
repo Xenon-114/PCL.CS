@@ -25,9 +25,9 @@ namespace PCL.CS.Modules
     {
 
         public const BuildType BuildType =
-#if Alpha
+#if ALPHA
             BuildType.Alpha
-#elif Beta
+#elif BETA
             BuildType.Beta
 #elif DEBUG
             BuildType.Debug

@@ -1,250 +1,48 @@
-<?xml version="1.0" encoding="utf-8"?>
-<Project ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
-  <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
   <PropertyGroup>
-    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
-    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
-    <ProjectGuid>{6C0F302E-636D-4FCF-9534-7ED36AA73BD8}</ProjectGuid>
     <OutputType>WinExe</OutputType>
-    <RootNamespace>PCL.CS</RootNamespace>
-    <AssemblyName>PCL.CS</AssemblyName>
-    <TargetFrameworkVersion>v4.7.2</TargetFrameworkVersion>
-    <FileAlignment>512</FileAlignment>
-    <ProjectTypeGuids>{60dc8134-eba5-43b8-bcc9-bb4bc16c2548};{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}</ProjectTypeGuids>
-    <WarningLevel>4</WarningLevel>
-    <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
-    <Deterministic>true</Deterministic>
-    <IsWebBootstrapper>false</IsWebBootstrapper>
-    <PublishUrl>publish\</PublishUrl>
-    <Install>true</Install>
-    <InstallFrom>Disk</InstallFrom>
-    <UpdateEnabled>false</UpdateEnabled>
-    <UpdateMode>Foreground</UpdateMode>
-    <UpdateInterval>7</UpdateInterval>
-    <UpdateIntervalUnits>Days</UpdateIntervalUnits>
-    <UpdatePeriodically>false</UpdatePeriodically>
-    <UpdateRequired>false</UpdateRequired>
-    <MapFileExtensions>true</MapFileExtensions>
-    <ApplicationRevision>0</ApplicationRevision>
-    <ApplicationVersion>1.0.0.%2a</ApplicationVersion>
-    <UseApplicationTrust>false</UseApplicationTrust>
-    <BootstrapperEnabled>true</BootstrapperEnabled>
+    <TargetFramework>net472</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <UseWPF>true</UseWPF>
+	<LangVersion>10.0</LangVersion>
+	<Configurations>Debug;Release;Alpha;Beta</Configurations>
+	<PlatformTarget>AnyCPU</PlatformTarget>
+	<SignAssembly>False</SignAssembly>
+	<ApplicationIcon>Image\icon.ico</ApplicationIcon>
   </PropertyGroup>
-  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
-    <PlatformTarget>x64</PlatformTarget>
-    <DebugSymbols>true</DebugSymbols>
-    <DebugType>full</DebugType>
-    <Optimize>false</Optimize>
-    <OutputPath>bin\Debug\</OutputPath>
-    <DefineConstants>DEBUG</DefineConstants>
-    <ErrorReport>prompt</ErrorReport>
-    <WarningLevel>4</WarningLevel>
-    <Prefer32Bit>false</Prefer32Bit>
+
+  <PropertyGroup Condition=" '$(Configuration)' == 'Alpha' ">
+	<OutputPath>bin\Alpha\</OutputPath>
+	<DefineConstants>ALPHA</DefineConstants>
+	<Optimize>False</Optimize>
   </PropertyGroup>
-  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
-    <PlatformTarget>AnyCPU</PlatformTarget>
-    <DebugType>pdbonly</DebugType>
-    <Optimize>true</Optimize>
-    <OutputPath>bin\Release\</OutputPath>
-    <DefineConstants>TRACE</DefineConstants>
-    <ErrorReport>prompt</ErrorReport>
-    <WarningLevel>4</WarningLevel>
+
+  <PropertyGroup Condition=" '$(Configuration)' == 'Beta' ">
+	<OutputPath>bin\Beta\</OutputPath>
+	<DefineConstants>BETA</DefineConstants>
+	<Optimize>False</Optimize>
   </PropertyGroup>
-  <PropertyGroup>
-    <ApplicationIcon>Image\icon.ico</ApplicationIcon>
-  </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Alpha|AnyCPU'">
-    <OutputPath>bin\Alpha\</OutputPath>
-    <DefineConstants>Alpha</DefineConstants>
-  </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Beta|AnyCPU'">
-    <OutputPath>bin\Beta\</OutputPath>
-    <DefineConstants>Beta</DefineConstants>
-  </PropertyGroup>
+
   <ItemGroup>
-    <Reference Include="Ookii.Dialogs.Wpf">
-      <HintPath>..\..\MeloongCore-4d389f4375aa60e977f512690219a1fa4476838a\Wpf\bin\Release\publish\Ookii.Dialogs.Wpf.dll</HintPath>
-    </Reference>
-    <Reference Include="System" />
-    <Reference Include="System.Data" />
-    <Reference Include="System.Xml" />
-    <Reference Include="Microsoft.CSharp" />
-    <Reference Include="System.Core" />
-    <Reference Include="System.Xml.Linq" />
-    <Reference Include="System.Data.DataSetExtensions" />
-    <Reference Include="System.Net.Http" />
-    <Reference Include="System.Xaml">
-      <RequiredTargetFramework>4.0</RequiredTargetFramework>
-    </Reference>
-    <Reference Include="WindowsBase" />
-    <Reference Include="PresentationCore" />
-    <Reference Include="PresentationFramework" />
+    <Content Include="Image\icon.ico" />
   </ItemGroup>
+
   <ItemGroup>
-    <ApplicationDefinition Include="App.xaml">
-      <Generator>MSBuild:Compile</Generator>
-      <SubType>Designer</SubType>
-    </ApplicationDefinition>
-    <Page Include="Colors.xaml">
-      <SubType>Designer</SubType>
-      <Generator>MSBuild:Compile</Generator>
-    </Page>
-    <Page Include="Controls\ControlTheme.xaml">
-      <SubType>Designer</SubType>
-      <Generator>MSBuild:Compile</Generator>
-    </Page>
-    <Page Include="Controls\MyIconTitleButton.xaml">
-      <Generator>MSBuild:Compile</Generator>
-      <SubType>Designer</SubType>
-    </Page>
-    <Page Include="Controls\MyLoading.xaml">
-      <Generator>MSBuild:Compile</Generator>
-      <SubType>Designer</SubType>
-    </Page>
-    <Page Include="Controls\MyMsgBox\MyMsgBox.xaml">
-      <SubType>Designer</SubType>
-      <Generator>MSBuild:Compile</Generator>
-    </Page>
-    <Page Include="Controls\TitleLeft.xaml">
-      <Generator>MSBuild:Compile</Generator>
-      <SubType>Designer</SubType>
-    </Page>
-    <Page Include="MainWindow.xaml">
-      <Generator>MSBuild:Compile</Generator>
-      <SubType>Designer</SubType>
-    </Page>
-    <Compile Include="App.xaml.cs">
-      <DependentUpon>App.xaml</DependentUpon>
-      <SubType>Code</SubType>
-    </Compile>
-    <Compile Include="Controls\ColorMixer.cs" />
-    <Compile Include="Controls\HintControl.cs" />
-    <Compile Include="Controls\IMyControl.cs" />
-    <Compile Include="Controls\MyBorder.cs" />
-    <Compile Include="Controls\MyButton.cs" />
-    <Compile Include="Controls\MyCard.cs" />
-    <Compile Include="Controls\MyComboBox.cs" />
-    <Compile Include="Controls\MyDropShadow.cs" />
-    <Compile Include="Controls\MyIconButton.cs" />
-    <Compile Include="Controls\MyIconTitleButton.xaml.cs">
-      <DependentUpon>MyIconTitleButton.xaml</DependentUpon>
-    </Compile>
-    <Compile Include="Controls\MyImage.cs" />
-    <Compile Include="Controls\MyListItem.cs" />
-    <Compile Include="Controls\MyLoading.xaml.cs">
-      <DependentUpon>MyLoading.xaml</DependentUpon>
-    </Compile>
-    <Compile Include="Controls\MyMainWindow.cs" />
-    <Compile Include="Controls\MyMsgBox\MyMsg.cs" />
-    <Compile Include="Controls\MyMsgBox\MyMsgBox.xaml.cs">
-      <DependentUpon>MyMsgBox.xaml</DependentUpon>
-    </Compile>
-    <Compile Include="Controls\MyRadioBoxItem.cs" />
-    <Compile Include="Controls\MyRadioButton.cs" />
-    <Compile Include="Controls\MyRadioStack.cs" />
-    <Compile Include="Controls\MyScrollBar.cs" />
-    <Compile Include="Controls\MyScrollViewer.cs" />
-    <Compile Include="Controls\MyTextBox.cs" />
-    <Compile Include="Controls\MyWinMain.cs" />
-    <Compile Include="Controls\RatioControl.cs" />
-    <Compile Include="Controls\TitleLeft.xaml.cs">
-      <DependentUpon>TitleLeft.xaml</DependentUpon>
-    </Compile>
-    <Compile Include="MainWindow.xaml.cs">
-      <DependentUpon>MainWindow.xaml</DependentUpon>
-      <SubType>Code</SubType>
-    </Compile>
-    <Page Include="Pages\MyDeveloping.xaml">
-      <Generator>MSBuild:Compile</Generator>
-      <SubType>Designer</SubType>
-    </Page>
-    <Page Include="Pages\PageDownload\PageDownloadLeft.xaml">
-      <SubType>Designer</SubType>
-      <Generator>MSBuild:Compile</Generator>
-    </Page>
-    <Page Include="Pages\PageLaunch\PageLaunchLeft.xaml">
-      <Generator>MSBuild:Compile</Generator>
-      <SubType>Designer</SubType>
-    </Page>
-    <Page Include="Pages\PageOther\PageAbout.xaml">
-      <Generator>MSBuild:Compile</Generator>
-      <SubType>Designer</SubType>
-    </Page>
+    <ProjectReference Include="..\..\XeF4Core\XeF4Core\XeF4Core.csproj" />
+    <ProjectReference Include="..\XeF4Core.WPF\XeF4Core.WPF.csproj" />
   </ItemGroup>
+
   <ItemGroup>
-    <Compile Include="Modules\Animation\AnimationsStruct\AniBaseStru.cs" />
-    <Compile Include="Modules\Animation\AnimationsStruct\AniEases.cs" />
-    <Compile Include="Modules\Animation\Animation.cs" />
-    <Compile Include="Modules\Base.cs" />
-    <Compile Include="Modules\Main.cs" />
-    <Compile Include="Modules\Net.cs" />
-    <Compile Include="Pages\MyDeveloping.xaml.cs">
-      <DependentUpon>MyDeveloping.xaml</DependentUpon>
-    </Compile>
-    <Compile Include="Pages\MyPageTemplate.cs" />
-    <Compile Include="Pages\PageDownload\PageDownloadLeft.xaml.cs">
-      <DependentUpon>PageDownloadLeft.xaml</DependentUpon>
-    </Compile>
-    <Compile Include="Pages\PageLaunch\MyLaunchButton.cs" />
-    <Compile Include="Pages\PageLaunch\PageLaunchLeft.xaml.cs">
-      <DependentUpon>PageLaunchLeft.xaml</DependentUpon>
-    </Compile>
-    <Compile Include="Pages\PageOther\PageAbout.xaml.cs">
-      <DependentUpon>PageAbout.xaml</DependentUpon>
-    </Compile>
-    <Compile Include="Pages\Pages.cs" />
-    <Compile Include="Properties\AssemblyInfo.cs">
-      <SubType>Code</SubType>
-    </Compile>
-    <Compile Include="Properties\Resources.Designer.cs">
-      <AutoGen>True</AutoGen>
-      <DesignTime>True</DesignTime>
-      <DependentUpon>Resources.resx</DependentUpon>
-    </Compile>
-    <Compile Include="Properties\Settings.Designer.cs">
-      <AutoGen>True</AutoGen>
-      <DependentUpon>Settings.settings</DependentUpon>
-      <DesignTimeSharedInput>True</DesignTimeSharedInput>
-    </Compile>
-    <EmbeddedResource Include="Properties\Resources.resx">
-      <Generator>ResXFileCodeGenerator</Generator>
-      <LastGenOutput>Resources.Designer.cs</LastGenOutput>
-    </EmbeddedResource>
-    <None Include="Properties\Settings.settings">
-      <Generator>SettingsSingleFileGenerator</Generator>
-      <LastGenOutput>Settings.Designer.cs</LastGenOutput>
-    </None>
+    <Folder Include="Properties\" />
   </ItemGroup>
+
   <ItemGroup>
-    <None Include="App.config" />
+    <PackageReference Include="Costura.Fody" Version="6.2.0">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+    <PackageReference Include="System.Security.Cryptography.ProtectedData" Version="10.0.10" />
   </ItemGroup>
-  <ItemGroup>
-    <Folder Include="Modules\Animation\Test\" />
-  </ItemGroup>
-  <ItemGroup>
-    <BootstrapperPackage Include=".NETFramework,Version=v4.7.2">
-      <Visible>False</Visible>
-      <ProductName>Microsoft .NET Framework 4.7.2 %28x86 和 x64%29</ProductName>
-      <Install>true</Install>
-    </BootstrapperPackage>
-    <BootstrapperPackage Include="Microsoft.Net.Framework.3.5.SP1">
-      <Visible>False</Visible>
-      <ProductName>.NET Framework 3.5 SP1</ProductName>
-      <Install>false</Install>
-    </BootstrapperPackage>
-  </ItemGroup>
-  <ItemGroup>
-    <Resource Include="Image\icon.ico" />
-  </ItemGroup>
-  <ItemGroup>
-    <Resource Include="Image\Icons\Disabled.png" />
-    <Resource Include="Image\Icons\NoIcon.png" />
-  </ItemGroup>
-  <ItemGroup>
-    <ProjectReference Include="..\..\XeF4Core\XeF4Core\XeF4Core.csproj">
-      <Project>{d44458ab-59f4-369c-3ea2-9c2a035746aa}</Project>
-      <Name>XeF4Core</Name>
-    </ProjectReference>
-  </ItemGroup>
-  <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
+
 </Project>

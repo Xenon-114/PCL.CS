@@ -1,0 +1,13 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net472</TargetFramework>
+    <Nullable>enable</Nullable>
+    <UseWPF>true</UseWPF>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <InternalsVisibleTo>XeF4Core</InternalsVisibleTo>
+    <LangVersion>14.0</LangVersion>
+    <Configurations>Debug;Release</Configurations>
+  </PropertyGroup>
+
+</Project>
