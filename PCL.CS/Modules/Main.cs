@@ -20,7 +20,7 @@ namespace PCL.CS.Modules
     }
     public static class Main
     {
-        public static MainWindow MainWnd { get => MainWindow.Currect; }
+        public static MainWindow MainWnd { get => MainWindow.Current; }
 
         static Main()
         {
@@ -54,7 +54,7 @@ namespace PCL.CS.Modules
             Base.Log("[Message]尝试显示弹窗");
             await TryShowMessage();
             Base.Log("[Message]等待弹窗返回...");
-            await MainWindow.Currect.CloseMessage(Message);
+            await MainWindow.Current.CloseMessage(Message);
             object Result = await Message.ResultTask.Task;
             Base.Log($"[Message]弹窗已返回，返回值{Result??"Null"}");
             lock (MessageList)
@@ -63,7 +63,7 @@ namespace PCL.CS.Modules
                 {
                     Base.Log($"[Message]显示下一个弹窗...");
                     ShowingMsg = MessageList.Dequeue();
-                    MainWindow.Currect.ShowMessage(ShowingMsg);
+                    MainWindow.Current.ShowMessage(ShowingMsg);
                 }
                 else ShowingMsg = null;
             }
@@ -87,7 +87,7 @@ namespace PCL.CS.Modules
             }
             await MainWindow.LoadedTask.Task;
             Base.Log("[Message]尝试显示弹窗成功");
-            MainWindow.Currect.ShowMessage(ShowingMsg);
+            MainWindow.Current.ShowMessage(ShowingMsg);
         }
 
         #endregion
@@ -98,7 +98,7 @@ namespace PCL.CS.Modules
         public static void Hint(string Text,HintColorState State=HintColorState.Normal)
         {
             Text = Text.Replace("\n", "").Replace("\r", "");
-            if (MainWindow.Currect is null)
+            if (MainWindow.Current is null)
             {
                 Func<Task> a = async () =>
                 {
@@ -127,7 +127,7 @@ namespace PCL.CS.Modules
             });
 
 
-            MainWindow.Currect.PanHint.Children.Add(control);
+            MainWindow.Current.PanHint.Children.Add(control);
         }
         private static void RemoveHint(HintControl control)
         {
@@ -137,7 +137,7 @@ namespace PCL.CS.Modules
                 new DoubleAnimation(control,HintControl.TrueHeightProperty,26,0,150,200,new AniEaseInFluent(2)),
                 new DoubleAnimation(control,HintControl.LeftMarginProperty,control.LeftMargin,-10,200,0,new AniEaseInFluent(2)),
                 new DoubleAnimation(control,Control.OpacityProperty,control.Opacity,0,200,0),
-                new EventAnimation(350,()=>MainWindow.Currect?.PanHint.Children.Remove(control))
+                new EventAnimation(350,()=>MainWindow.Current?.PanHint.Children.Remove(control))
             });
         }
 
@@ -153,7 +153,7 @@ namespace PCL.CS.Modules
                 Timer.Tick += (s, e) =>
                 {
                     TimeSpan Now = Stopwatch.Elapsed;
-                    foreach (HintControl control in MainWindow.Currect.PanHint.Children)
+                    foreach (HintControl control in MainWindow.Current.PanHint.Children)
                     {
                         if (control.Tag is null) continue;
                         if (Now - ((TimeSpan)control.Tag) > TimeSpan.FromSeconds(2))

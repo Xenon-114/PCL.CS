@@ -22,6 +22,7 @@ using System.Windows.Shapes;
 using System.Windows.Threading;
 
 using nint = System.IntPtr;
+using XeF4Core.WPF;
 
 namespace PCL.CS
 {
@@ -30,13 +31,13 @@ namespace PCL.CS
     /// </summary>
     public partial class MainWindow : Window
     {
-        public static MainWindow Currect
+        public static MainWindow Current
         {
-            get => CurrectWindow;
+            get => CurrentWindow;
         }
-        private static MainWindow CurrectWindow = null;
+        private static MainWindow CurrentWindow = null;
 
-        public static MyMsgBox CurrectMsgBox { get; } = new MyMsgBox();
+        public static MyMsgBox CurrentMsgBox { get; } = new MyMsgBox();
 
         private ScaleTransform MainScale = new ScaleTransform();
         private RotateTransform MainRotate = new RotateTransform();
@@ -54,16 +55,23 @@ namespace PCL.CS
             get => PgRightBorder.Child;
             set => PgRightBorder.Child = value;
         }
+        private MyTooltip Tooltip;
         public MainWindow()
         {
             InitializeComponent();
-            CurrectWindow = this;
+
+            this.Height = Config.Current.WindowHeight;
+            this.Width = Config.Current.WindowWidth;
+
+            Tooltip = new MyTooltip(this);
+
+            CurrentWindow = this;
             MWindow.TitleBarDrag += (s, e) => DragMove();
             PanMsg.MouseLeftButtonDown += (s, e) =>
             {
                 if (PanMsg.IsMouseDirectlyOver) DragMove();
             };
-            this.PanMsg.Child = CurrectMsgBox;
+            this.PanMsg.Child = CurrentMsgBox;
             this.Loaded += MainWindow_Loaded;
             PgLeftBorder.SizeChanged += PgLeftAnim;
             BtnTitleClose.Click += MainWindow_Closed;
@@ -73,6 +81,9 @@ namespace PCL.CS
             {
                 if (WindowState == WindowState.Maximized)
                     WindowState = WindowState.Normal;
+                Config.Current.WindowWidth = this.Width;
+                Config.Current.WindowHeight = this.Height;
+                //Config.Write();
             };
             BtnTitleMin.Click += (s, e) =>
             {
@@ -100,13 +111,13 @@ namespace PCL.CS
             RadioStackMain.SelectIndexChanged += RadioStackMain_SelectedIndexChanged;
             PanTitleLeft.Back += PanTitleLeft_Back;
 
-            //MainWindow.CurrectMsgBox = this.MsgBox;
+            //MainWindow.CurrentMsgBox = this.MsgBox;
         }
 
         protected override void OnKeyUp(KeyEventArgs e)
         {
             base.OnKeyUp(e);
-            if (IsShowingMessage) CurrectMsgBox.OnThisKeyDown(e.Key);
+            if (IsShowingMessage) CurrentMsgBox.OnThisKeyDown(e.Key);
         }
         private void PgLeftAnim(object s,SizeChangedEventArgs e)
         {
@@ -131,6 +142,9 @@ namespace PCL.CS
         private void MainWindow_Closed(object sender,RoutedEventArgs e)
         {
             this.IsHitTestVisible = false;
+
+            Tooltip.Dispose();
+
             Animation.Stop(MainWindowAnim);
             DoubleAnimation OutRenderAnim = new DoubleAnimation(MainRotate, RotateTransform.AngleProperty, MainRotate.Angle, MainRotate.Angle + 0.6, 180, 0, new AniEaseOutFluent(2));
             DoubleAnimation OutSizeXAnim = new DoubleAnimation(MainScale, ScaleTransform.ScaleXProperty, MainScale.ScaleX, MainScale.ScaleX * 0.88, 180, 0, new AniEaseOutFluent(2));
@@ -270,8 +284,8 @@ namespace PCL.CS
         private bool IsShowingMessage = false;
         public void ShowMessage(MyMsg msg)
         {
-            CurrectMsgBox.Message = msg;
-            CurrectMsgBox.Show();
+            CurrentMsgBox.Message = msg;
+            CurrentMsgBox.Show();
             PanMsg.Visibility = Visibility.Visible;
             Animation.Start(new DoubleAnimation(PanMsgBrush, Brush.OpacityProperty, PanMsgBrush.Opacity, 0.4, 200, 0));
             IsShowingMessage = true;
@@ -285,7 +299,7 @@ namespace PCL.CS
                 new DoubleAnimation(PanMsgBrush,Brush.OpacityProperty,PanMsgBrush.Opacity,0,150,0),
                 new EventAnimation(150,()=>PanMsg.Visibility=Visibility.Collapsed)
             });
-            await CurrectMsgBox.CloseAndWait();
+            await CurrentMsgBox.CloseAndWait();
             return Result;
         }
         #endregion
@@ -397,8 +411,8 @@ namespace PCL.CS
             var relY = lyMouse - windowRect.Top;
 
             // 判定是否命中热区
-            var inLeft = (relX >= 6 && relX <= 11 && relY >= 6 && relY <= windowRect.Height - 16);
-            var inRight = (relX >= windowRect.Width - 11 && relX <= windowRect.Width - 6 && relY >= 6 && relY <= windowRect.Height - 16);
+            var inLeft = (relX >= 6 && relX <= 11 && relY >= 6 && relY <= windowRect.Height - 11);
+            var inRight = (relX >= windowRect.Width - 11 && relX <= windowRect.Width - 6 && relY >= 6 && relY <= windowRect.Height - 11);
             var inTop = (relY >= 6 && relY <= 11 && relX >= 6 && relX <= windowRect.Width - 6);
             var inBottom = (relY >= windowRect.Height - 16 && relY <= windowRect.Height - 11 && relX >= 6 && relX <= windowRect.Width - 6);
 
