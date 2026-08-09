@@ -24,7 +24,15 @@ namespace PCL.CS.Modules
         /// <summary>
         /// 动画速度。当它=0时代表不进行动画
         /// </summary>
-        public static double AniSpeed = 1.0;
+        public static double AniSpeed
+        {
+            get => Config.Current.AnimationSpeed;
+            set
+            {
+                Config.Current.AnimationSpeed = value;
+                Config.Save();
+            }
+        }
         //private static readonly object _animationLock = new object();
         //private static Thread AnimationThread;
         public static bool IsRunning = false;

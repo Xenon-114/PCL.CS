@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Diagnostics;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
@@ -10,14 +11,9 @@ using System.Windows.Media.Animation;
 using System.Windows.Media.Effects;
 using System.Windows.Threading;
 
-//==================================================================================================
-//  代码来源：PCL-CE(PCL.Core)
-//    源码地址：https://github.com/PCL-Community/PCL-CE/blob/dev/PCL.Core/UI/Controls/Tooltip.cs
-//==================================================================================================
-
 namespace XeF4Core.WPF;
 
-public class MyTooltip : DependencyObject, IDisposable
+public class MyTooltip : DependencyObject
 {
     #region 样式画刷
 
@@ -64,6 +60,7 @@ public class MyTooltip : DependencyObject, IDisposable
         ShadowDepth = 0,
         Color = Colors.Black
     };
+    private readonly object locker = new();
 
     #endregion
 
@@ -74,33 +71,20 @@ public class MyTooltip : DependencyObject, IDisposable
 
     #endregion
 
-    #region 实例状态机
+    #region 实例状态与字段
 
     private readonly FrameworkElement _root;
     private bool _isDisposed;
-    private int _gen;
     private bool _closing;
     private Point _cursor;
-    private FrameworkElement? _target;
-    private object? _lastContent;
     private Popup? _flyout;
     private Border? _shell;
     private ScaleTransform? _scaler;
-    private Storyboard? _openStory;
-    private Storyboard? _closeStory;
+    private Storyboard? OpenStory;
+    private Storyboard? CloseStory;
     private DispatcherTimer? _latch;
     private HwndSourceHook? _transparentHook;
     private bool _layoutSubscribed;
-
-    // 预创建的委托缓存
-    private readonly MouseEventHandler _onEnterHandler;
-    private readonly MouseEventHandler _onMoveHandler;
-    private readonly MouseEventHandler _onLeaveHandler;
-    private readonly MouseButtonEventHandler _onReleaseHandler;
-    private readonly RoutedEventHandler _onUnloadedHandler;
-    private readonly RoutedEventHandler _onComboLoadedHandler;
-    private readonly MouseButtonEventHandler _onComboMouseDownHandler;
-    private readonly EventHandler _onLayoutUpdatedHandler;
 
     #endregion
 
@@ -110,19 +94,17 @@ public class MyTooltip : DependencyObject, IDisposable
     {
         _root = root ?? throw new ArgumentNullException(nameof(root));
 
+
+
+        _OnEnterHandler = OnMouseEnter;
+        _OnMoveHandler = OnMouseMove;
+        _OnLeaveHandler= OnMouseLeave;
+        _OnUnloadedHandler = OnUnload;
+
+
         _shadow.Freeze();
-
-        // 初始化委托
-        _onEnterHandler = OnEnter;
-        _onMoveHandler = OnMove;
-        _onLeaveHandler = OnLeave;
-        _onReleaseHandler = OnRelease;
-        _onUnloadedHandler = OnUnloaded;
-        _onComboLoadedHandler = OnComboInit;
-        _onComboMouseDownHandler = OnComboInit;
-        _onLayoutUpdatedHandler = OnLayoutUpdated;
-
         // 预建 Storyboard
+        _BuildUi();
         _PrebuildStoryboards();
 
         // 挂载事件（仅当前根元素范围内）
@@ -133,41 +115,85 @@ public class MyTooltip : DependencyObject, IDisposable
 
     #region 事件注册
 
+    private readonly MouseEventHandler _OnEnterHandler;
+    private readonly MouseEventHandler _OnMoveHandler;
+    private readonly MouseEventHandler _OnLeaveHandler;
+    private readonly RoutedEventHandler _OnUnloadedHandler;
+
     private void _AttachRootEvents()
     {
         // 在根元素上拦截事件（handledEventsToo = true）
-        _root.AddHandler(UIElement.MouseEnterEvent, _onEnterHandler, true);
-        _root.AddHandler(UIElement.MouseMoveEvent, _onMoveHandler, true);
-        _root.AddHandler(UIElement.MouseLeaveEvent, _onLeaveHandler, true);
-        _root.AddHandler(UIElement.PreviewMouseUpEvent, _onReleaseHandler, true);
-        _root.AddHandler(FrameworkElement.UnloadedEvent, _onUnloadedHandler, true);
-
-        // ComboBox 特殊处理
-        _root.AddHandler(ComboBox.LoadedEvent, _onComboLoadedHandler, true);
-        _root.AddHandler(ComboBox.PreviewMouseDownEvent, _onComboMouseDownHandler, true);
+        EventManager.RegisterClassHandler(typeof(FrameworkElement),
+            UIElement.MouseEnterEvent, _OnEnterHandler, true);
+        EventManager.RegisterClassHandler(typeof(FrameworkElement),
+            UIElement.MouseMoveEvent, _OnMoveHandler);
+        EventManager.RegisterClassHandler(typeof(FrameworkElement),
+            UIElement.MouseLeaveEvent, _OnLeaveHandler);
+        EventManager.RegisterClassHandler(typeof(FrameworkElement),
+            FrameworkElement.UnloadedEvent, _OnUnloadedHandler);
+        EventManager.RegisterClassHandler(typeof(FrameworkElement),
+            ToolTipService.ToolTipOpeningEvent, new ToolTipEventHandler((s, e) => { e.Handled = true; }), true);
     }
 
-    private void _DetachRootEvents()
+    #endregion
+
+    #region 事件处理
+    private void OnMouseEnter(object sender,MouseEventArgs e)
     {
-        _root.RemoveHandler(UIElement.MouseEnterEvent, _onEnterHandler);
-        _root.RemoveHandler(UIElement.MouseMoveEvent, _onMoveHandler);
-        _root.RemoveHandler(UIElement.MouseLeaveEvent, _onLeaveHandler);
-        _root.RemoveHandler(UIElement.PreviewMouseUpEvent, _onReleaseHandler);
-        _root.RemoveHandler(FrameworkElement.UnloadedEvent, _onUnloadedHandler);
-        _root.RemoveHandler(ComboBox.LoadedEvent, _onComboLoadedHandler);
-        _root.RemoveHandler(ComboBox.PreviewMouseDownEvent, _onComboMouseDownHandler);
-        _root.LayoutUpdated -= _onLayoutUpdatedHandler;
-        _layoutSubscribed = false;
+        if (sender is not FrameworkElement FElement) return;
+        FElement.Dispatcher.BeginInvoke(() => TryShow(FElement));
     }
+    private void OnMouseMove(object sender, MouseEventArgs e)
+    {
+        if (sender is not FrameworkElement FElement) return;
+        var Over = _SeekOwner(_Over());
+        if (Over is not null)
+            TryShow(Over);
 
+        _PlaceNear();
+    }
+    private void OnMouseLeave(object sender, MouseEventArgs e)
+    {
+        lock (locker)
+        {
+            if (sender is not FrameworkElement fe ||  !ReferenceEquals(fe, UsingTarget) ) return;
+
+            if (_PointInside(fe, Mouse.GetPosition(fe)))
+            {
+                e.Handled = true;
+                return;
+            }
+
+            var next = _SeekOwner(_Over());
+            if (next is not null && !ReferenceEquals(next, Target))
+            {
+                TryShow(next);
+                return;
+            }
+            else
+            {
+                CloseToolTip();
+            }
+        }
+    }
+    private void OnUnload(object sender, RoutedEventArgs e)
+    {
+        if (sender is not FrameworkElement FElement) return;
+        FElement.Dispatcher.BeginInvoke(() =>
+        {
+            if (ReferenceEquals(FElement, Target))
+                CloseToolTip();
+        });
+    }
+    private FrameworkElement? UsingTarget => (State is ToolTipState.ChangingOrClosing || State is ToolTipState.Waiting) ? NewTarget : Target;
     #endregion
 
     #region 设置Storyboard
 
     private void _PrebuildStoryboards()
     {
-        _openStory = new Storyboard();
-        _closeStory = new Storyboard();
+        OpenStory = new Storyboard();
+        CloseStory = new Storyboard();
 
         // 打开动画：透明度 0→1，缩放 0.97→1
         void AddOpenAnim(double to, string prop, IEasingFunction? ease = null)
@@ -179,7 +205,7 @@ public class MyTooltip : DependencyObject, IDisposable
             // 显式设置目标，避免依赖隐式传递
             Storyboard.SetTarget(anim, _shell);
             Storyboard.SetTargetProperty(anim, new PropertyPath(prop));
-            _openStory.Children.Add(anim);
+            OpenStory.Children.Add(anim);
         }
 
         // 关闭动画：透明度 1→0，缩放 1→0.97
@@ -191,7 +217,7 @@ public class MyTooltip : DependencyObject, IDisposable
             };
             Storyboard.SetTarget(anim, _shell);
             Storyboard.SetTargetProperty(anim, new PropertyPath(prop));
-            _closeStory.Children.Add(anim);
+            CloseStory.Children.Add(anim);
         }
 
         BackEase backEase = new() { EasingMode = EasingMode.EaseOut, Amplitude = 0.4 };
@@ -203,149 +229,53 @@ public class MyTooltip : DependencyObject, IDisposable
         AddCloseAnim(0, nameof(UIElement.Opacity));
         AddCloseAnim(ScaleClosed, "RenderTransform.ScaleX");
         AddCloseAnim(ScaleClosed, "RenderTransform.ScaleY");
-    }
-
-    #endregion
-
-    #region 事件处理器
-
-    private void OnEnter(object sender, MouseEventArgs e)
-    {
-        if (_isDisposed) return;
-        _root.Dispatcher.BeginInvoke(() => _TryClaim());
-    }
-
-    private bool _IsCursorPlaced(FrameworkElement el) =>
-        ToolTipService.GetPlacement(el) is PlacementMode.Mouse or PlacementMode.MousePoint;
-
-    private void OnMove(object sender, MouseEventArgs e)
-    {
-        if (_isDisposed) return;
-
-        // 左键按下时只更新位置，不触发重置
-        if (Mouse.LeftButton == MouseButtonState.Pressed)
-        {
-            if (_target is not null)
-            {
-                _cursor = Mouse.GetPosition(_target);
-                if (_IsCursorPlaced(_target) && _flyout is { IsOpen: true })
-                    _PlaceNear(_target, _cursor);
-            }
-            else if (_flyout is { IsOpen: true, PlacementTarget: FrameworkElement ft } && _IsCursorPlaced(ft))
-            {
-                _cursor = Mouse.GetPosition(ft);
-                _PlaceNear(ft, _cursor);
-            }
-            return;
-        }
-
-        _TryClaim();
-
-        if (_target is not null)
-        {
-            _cursor = Mouse.GetPosition(_target);
-            if (_IsCursorPlaced(_target) && _flyout is { IsOpen: true })
-                _PlaceNear(_target, _cursor);
-        }
-        else if (_flyout is { IsOpen: true, PlacementTarget: FrameworkElement ft } && _IsCursorPlaced(ft))
-        {
-            _cursor = Mouse.GetPosition(ft);
-            _PlaceNear(ft, _cursor);
-        }
-    }
-
-    private void OnLeave(object sender, MouseEventArgs e)
-    {
-        if (_isDisposed) return;
-        if (sender is not FrameworkElement fe || !ReferenceEquals(fe, _target)) return;
-
-        if (_PointInside(fe, Mouse.GetPosition(fe)))
-        {
-            e.Handled = true;
-            return;
-        }
-
-        // 检查鼠标是否进入了其他有效元素
-        var next = _SeekOwner(_Over());
-        if (next is not null && !ReferenceEquals(next, _target))
-        {
-            _StartCycle(next, Mouse.GetPosition(next));
-            return;
-        }
-
-        _WindDown();
-    }
-
-    private void OnRelease(object sender, MouseButtonEventArgs e)
-    {
-        if (_isDisposed) return;
-        _root.Dispatcher.BeginInvoke(() =>
-        {
-            if (_target is null) return;
-            var owner = _SeekOwner(_Over() ?? sender as DependencyObject);
-            if (owner is null)
-                _WindDown();
-            else
-                _StartCycle(owner, Mouse.GetPosition(owner));
-        }, DispatcherPriority.Input);
-    }
-
-    private void OnUnloaded(object sender, RoutedEventArgs e)
-    {
-        if (_isDisposed) return;
-        if (sender is FrameworkElement fe && ReferenceEquals(fe, _target))
-            _WindDown();
+        CloseStory.Completed += (s, e) => OnToolTipClosed();
     }
 
     #endregion
 
     #region 所有者解析
 
-    private void _TryClaim()
+    private void TryShow(FrameworkElement Over)
     {
-        // 获取鼠标下方实际元素
-        var leaf = Mouse.DirectlyOver as DependencyObject;
-        var owner = _SeekOwner(leaf);
-        if (owner is null)
+        lock (locker)
         {
-            if (_target is not null) _WindDown();
-            _lastContent = null; // 清除缓存
-            return;
-        }
-
-        // 提取内容
-        var content = _FetchContentObject(owner);
-        bool empty = content is null || (content is string s && string.IsNullOrEmpty(s));
-
-        if (empty)
-        {
-            if (_target is not null) _WindDown();
-            _lastContent = null;
-            return;
-        }
-
-        // 内容对比
-        bool targetChanged = !ReferenceEquals(owner, _target);
-
-        if (targetChanged)
-        {
-            // 唯一重置条件：目标变
-            _lastContent = content;
-            if (_target is not null && _flyout is { IsOpen: true })
+            //Debug.WriteLine("尝试显示ToolTip");
+            // 获取鼠标下方实际元素
+            var leaf = Over;
+            var owner = _SeekOwner(leaf);
+            if (owner is null)
             {
-                _WindDown(); // 关闭旧内容（_WindDown 不会清除 _lastContent）
+                //Debug.WriteLine("没有找到ToolTip");
+                if (UsingTarget is not null) CloseToolTip();
+                return;
             }
-            _target = owner;
-            _cursor = Mouse.GetPosition(owner);
-            _latch?.Stop();
-            _KickTimer(owner);
-        }
-        else
-        {
-            // 目标未变：仅更新光标位置
-            _cursor = Mouse.GetPosition(owner);
-            if (_flyout is { IsOpen: true })
-                _PlaceNear(owner, _cursor);
+
+            // 提取内容
+            var content = _FetchContentObject(owner);
+            bool empty = content is null || (content is string s && string.IsNullOrEmpty(s));
+
+            if (empty)
+            {
+                //Debug.WriteLine("ToolTip为空");
+                if (UsingTarget is not null) CloseToolTip();
+                return;
+            }
+
+            bool targetChanged = !ReferenceEquals(owner, UsingTarget);
+
+            if (targetChanged)
+            {
+                //Debug.WriteLine("ToolTip开始改变");
+                ChangeToolTip(owner);
+            }
+            else
+            {
+                if (_flyout is { IsOpen: true })
+                    _PlaceNear();
+                //应对ToolTip意外关闭
+                else if (Target is not null) _ShowToolTip();
+            }
         }
     }
 
@@ -392,155 +322,124 @@ public class MyTooltip : DependencyObject, IDisposable
 
     #endregion
 
-    #region 生命周期
+    #region 运行周期
 
-    private void _StartCycle(FrameworkElement target, Point pt)
+    private void CloseToolTip()
     {
-        if (!_Eligible(target) || !_FetchContent(target)) return;
-
-        // 如果是 ComboBox，特殊处理
-        _Stitch(target as ComboBox);
-
-        // 如果目标未变，只更新光标和可能的定时器
-        if (ReferenceEquals(_target, target))
+        lock (locker)
         {
-            _cursor = pt;
-            if (_flyout is not { IsOpen: true } && _latch is null)
-                _KickTimer(target);
-            return;
-        }
-
-        // 目标改变，但 _TryClaim 已处理内容对比，此处主要处理正在显示时的切换
-        // 但 _TryClaim 已经调用了 _WindDown，所以这里只处理尚未显示但需要切换的情况
-        if (_flyout is { IsOpen: true })
-        {
-            // 如果 Tooltip 正在显示，则关闭并重新弹出（但 _TryClaim 已处理）
-            // 这里是额外保护
-            _closing = false;
-            _target = target;
-            _cursor = pt;
-            var mark = ++_gen;
-            var sb = _closeStory!.Clone();
-            sb.Completed += (_, _) =>
+            if (State is ToolTipState.ChangingOrClosing)
+                NewTarget = null;
+            if (State is ToolTipState.Waiting)
             {
-                if (mark == _gen)
-                {
-                    _flyout.IsOpen = false;
-                    _PopUp(target, pt);
-                }
-                sb.Remove(_shell!);
-            };
-            _shell!.BeginStoryboard(sb);
-            return;
+                StopShowAfter();
+                NewTarget = null;
+            }
+            if(State is ToolTipState.Showing)
+            {
+                NewTarget = null;
+                State = ToolTipState.ChangingOrClosing;
+                CloseStory?.Begin();
+            }
         }
-
-        // 正常切换（未打开）
-        _Hush();
-        _target = target;
-        _cursor = pt;
-        _KickTimer(target);
+    }
+    private void ChangeToolTip(FrameworkElement element)
+    {
+        lock (locker)
+        {
+            //if (element == NewTarget) return;
+            //Debug.WriteLine($"改变ToolTip，当前状态{State}");
+            if (State is ToolTipState.ChangingOrClosing)
+                NewTarget = element;
+            if (State is ToolTipState.Waiting || State is ToolTipState.Nothing)
+                ShowAfter(element);
+            if (State is ToolTipState.Showing)
+            {
+                //Debug.WriteLine("关闭已有的ToolTip");
+                NewTarget = element;
+                State = ToolTipState.ChangingOrClosing;
+                CloseStory?.Begin();
+            }
+        }
+    }
+    private void OnToolTipClosed()
+    {
+        lock (locker)
+        {
+            State = ToolTipState.Nothing;
+            if (NewTarget is not null)
+                _ShowToolTip();
+            else
+            {
+                _flyout!.IsOpen = false;
+                Target = null;
+            }
+        }
     }
 
-    private void _KickTimer(FrameworkElement target)
+    private enum ToolTipState
     {
-        _latch?.Stop();
-
-        var ms = Math.Max(0, ToolTipService.GetInitialShowDelay(target));
-        if (ms == 0)
+        Nothing,
+        Waiting,
+        ChangingOrClosing,
+        Showing
+    }
+    private FrameworkElement? Target { get; set; }
+    private FrameworkElement? NewTarget { get; set; }
+    private ToolTipState State { get; set; } = ToolTipState.Nothing;
+    private void _ShowToolTip()
+    {
+        lock (locker)
         {
-            _PopUp(target, _cursor);
-            return;
+            Target = NewTarget;
+            //Debug.WriteLine("ToolTip已显示");
+            if (Target is not null)
+            {
+                _RenderInside(Target);
+                _PlaceNear();
+                _flyout!.IsOpen = true;
+                OpenStory?.Begin();
+                State = ToolTipState.Showing;
+            }
         }
-
-        var mark = ++_gen;
-        _latch = new DispatcherTimer(
+    }
+    private int watchgen = 0;
+    private void StopShowAfter()
+    {
+        lock (locker)
+        {
+            watchgen++;
+            _latch?.Stop();
+            State = ToolTipState.Nothing;
+            NewTarget = null;
+            Target = null;
+        }
+    }
+    private void ShowAfter(FrameworkElement target)
+    {
+        lock (locker)
+        {
+            if (NewTarget == target) return;
+            int gen = ++watchgen;
+            NewTarget = target;
+            _latch?.Stop();
+            var ms = Math.Max(0, ToolTipService.GetInitialShowDelay(NewTarget));
+            //Debug.WriteLine($"ToolTip将在200毫秒后显示，代{gen}");
+            State = ToolTipState.Waiting;
+            _latch = new DispatcherTimer(
             TimeSpan.FromMilliseconds(ms),
             DispatcherPriority.Normal,
             (_, _) =>
             {
-                _latch?.Stop();
-                if (mark == _gen && _target is not null)
-                    _PopUp(_target, _cursor);
+                lock (locker)
+                {
+                    _latch?.Stop();
+                    if (gen == watchgen && NewTarget is not null)
+                        _ShowToolTip();
+                }
             },
-            target.Dispatcher);
-    }
-
-    private void _PopUp(FrameworkElement target, Point pt)
-    {
-        if (!ReferenceEquals(target, _target)) return;
-
-        if (_flyout is null)
-            _BuildUi();
-
-        _flyout!.PlacementTarget = target;
-        _PlaceNear(target, pt);
-
-        _shell!.DataContext = (target.ToolTip as ToolTip)?.DataContext ?? target.DataContext;
-        _shell.FlowDirection = target.FlowDirection;
-
-        _RenderInside(target);
-
-        // 增加代标记，使之前的关闭动画失效
-        _gen++;
-        _shell.BeginStoryboard(_openStory!);
-        _flyout.IsOpen = true;
-
-        // 订阅布局更新（只在 Tooltip 打开时）
-        _SubscribeLayoutUpdates();
-    }
-
-    private void _WindDown()
-    {
-        if (_closing) return;
-        _closing = true;
-
-        _latch?.Stop();
-        _latch = null;
-
-        // 注意：不清除 _target 和 _lastContent，由 _Hush 清理
-
-        if (_flyout is not { IsOpen: true } || _shell is null)
-        {
-            _Hush();
-            return;
+            NewTarget!.Dispatcher);
         }
-
-        var mark = ++_gen;
-        var sb = _closeStory!.Clone();
-        sb.Completed += (_, _) =>
-        {
-            if (mark == _gen) _Hush();
-            sb.Remove(_shell);
-        };
-        _shell.BeginStoryboard(sb);
-    }
-
-    private void _Hush()
-    {
-        _latch?.Stop();
-        _latch = null;
-        _closing = false;
-        _target = null;
-        // 保留 _lastContent，仅在 _TryClaim 中遇到空内容或退出时清空
-        _gen++;
-
-        if (_flyout is not null)
-            _flyout.IsOpen = false;
-
-        if (_shell is not null)
-        {
-            _shell.BeginAnimation(UIElement.OpacityProperty, null);
-            _shell.Child = null;
-        }
-
-        if (_scaler is not null)
-        {
-            _scaler.BeginAnimation(ScaleTransform.ScaleXProperty, null);
-            _scaler.BeginAnimation(ScaleTransform.ScaleYProperty, null);
-        }
-
-        // 取消布局更新订阅
-        _UnsubscribeLayoutUpdates();
     }
 
     #endregion
@@ -666,130 +565,66 @@ public class MyTooltip : DependencyObject, IDisposable
 
     #region 定位
 
-    private void _PlaceNear(FrameworkElement target, Point pt)
+    private PlacementMode LastPlctMode;
+    private double LastHorizontalOffset;
+    private double LastVerticalOffset;
+
+    private void _PlaceNear()
     {
-        _flyout!.PlacementTarget = target;
-        var mode = ToolTipService.GetPlacement(target);
+        if (_flyout is null) return;
+        var target = Target;
+        PlacementMode mode;
+        if (Target is not null)
+        {
+            mode = ToolTipService.GetPlacement(target);
+            if (LastPlctMode != mode) LastPlctMode = mode;
+        }
+        else mode = LastPlctMode;
+        
 
         if (mode == PlacementMode.Mouse)
         {
             _flyout.Placement = PlacementMode.Relative;
+            _flyout.PlacementTarget = _root;
+            var pt = Mouse.GetPosition(_root);
             _flyout.PlacementRectangle = default;
-            _flyout.HorizontalOffset = Math.Round(pt.X + 15 + ToolTipService.GetHorizontalOffset(target));
-            _flyout.VerticalOffset = Math.Round(pt.Y + 25 + ToolTipService.GetVerticalOffset(target));
+            if(target is not null)
+            {
+                LastHorizontalOffset = ToolTipService.GetHorizontalOffset(target);
+                LastVerticalOffset= ToolTipService.GetVerticalOffset(target);
+            }
+            _flyout.HorizontalOffset = Math.Round(pt.X + 15 + LastHorizontalOffset);
+            _flyout.VerticalOffset = Math.Round(pt.Y + 25 + LastVerticalOffset);
         }
         else if (mode == PlacementMode.MousePoint)
         {
             _flyout.Placement = PlacementMode.Relative;
+            _flyout.PlacementTarget = _root;
+            var pt = Mouse.GetPosition(_root);
             _flyout.PlacementRectangle = default;
-            _flyout.HorizontalOffset = Math.Round(pt.X + ToolTipService.GetHorizontalOffset(target));
-            _flyout.VerticalOffset = Math.Round(pt.Y + ToolTipService.GetVerticalOffset(target));
+            if (target is not null)
+            {
+                LastHorizontalOffset = ToolTipService.GetHorizontalOffset(target);
+                LastVerticalOffset = ToolTipService.GetVerticalOffset(target);
+            }
+            _flyout.HorizontalOffset = Math.Round(pt.X + LastHorizontalOffset);
+            _flyout.VerticalOffset = Math.Round(pt.Y + LastVerticalOffset);
         }
         else
         {
+            if (target is null) return;
+            _flyout.PlacementTarget = target;
             _flyout.Placement = mode;
             _flyout.HorizontalOffset = ToolTipService.GetHorizontalOffset(target);
             _flyout.VerticalOffset = ToolTipService.GetVerticalOffset(target);
             _flyout.PlacementRectangle = ToolTipService.GetPlacementRectangle(target);
+
+            double offset = _flyout.HorizontalOffset;
+            // 给它一个极小的增量，触发重定位
+            _flyout.HorizontalOffset = offset + 0.000001;
+            // 立即恢复原值
+            _flyout.HorizontalOffset = offset;
         }
-
-        double offset = _flyout.HorizontalOffset;
-        // 给它一个极小的增量，触发重定位
-        _flyout.HorizontalOffset = offset + 0.000001;
-        // 立即恢复原值
-        _flyout.HorizontalOffset = offset;
-    }
-
-    #endregion
-
-    #region 布局更新
-
-    private void _SubscribeLayoutUpdates()
-    {
-        if (_layoutSubscribed) return;
-        _root.LayoutUpdated += _onLayoutUpdatedHandler;
-        _layoutSubscribed = true;
-    }
-
-    private void _UnsubscribeLayoutUpdates()
-    {
-        if (!_layoutSubscribed) return;
-        _root.LayoutUpdated -= _onLayoutUpdatedHandler;
-        _layoutSubscribed = false;
-    }
-
-    private void OnLayoutUpdated(object? sender, EventArgs e)
-    {
-        if (_flyout is not { IsOpen: true } || _target is null) return;
-
-        var mode = ToolTipService.GetPlacement(_target);
-        //if (mode != PlacementMode.Mouse && mode != PlacementMode.MousePoint && !GetFollowCursor(_target))
-        //    return;
-
-        try
-        {
-            Point newPos = Mouse.GetPosition(_target);
-            if (Math.Abs(newPos.X - _cursor.X) > 0.1 || Math.Abs(newPos.Y - _cursor.Y) > 0.1)
-            {
-                _cursor = newPos;
-                _PlaceNear(_target, _cursor);
-            }
-        }
-        catch
-        {
-            // 目标可能已被移除，忽略
-        }
-    }
-
-    #endregion
-
-    #region ComboBox钩子
-
-    private void OnComboInit(object s, RoutedEventArgs e) => _Stitch(s as ComboBox);
-    private void OnComboInit(object s, MouseButtonEventArgs e) => _Stitch(s as ComboBox);
-
-    private void _Stitch(ComboBox? box)
-    {
-        if (box is null || (bool)box.GetValue(_keyCombo)) return;
-        box.SetValue(_keyCombo, true);
-        box.DropDownOpened += (_, _) =>
-        {
-            if (_target is not null) _WindDown();
-        };
-    }
-
-    #endregion
-
-    #region IDisposable
-
-    public void Dispose()
-    {
-        if (_isDisposed) return;
-        _isDisposed = true;
-
-        // 关闭 Tooltip
-        _Hush();
-
-        // 移除事件钩子
-        _DetachRootEvents();
-
-        // 移除 HWND 钩子
-        if (_transparentHook is not null && _flyout?.Child is UIElement child)
-        {
-            var src = PresentationSource.FromVisual(child) as HwndSource;
-            src?.RemoveHook(_transparentHook);
-        }
-
-        // 清理引用
-        _flyout = null;
-        _shell = null;
-        _scaler = null;
-        _openStory = null;
-        _closeStory = null;
-        _latch = null;
-        _transparentHook = null;
-        _target = null;
-        _lastContent = null;
     }
 
     #endregion

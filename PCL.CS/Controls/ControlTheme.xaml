@@ -100,11 +100,7 @@
     <ControlTemplate x:Key="MyControlTemplate" TargetType="Control">
         <ContentControl x:Name="VisualRoot"/>
     </ControlTemplate>
-
-    <Style TargetType="{x:Type ToolTip}">
-        <Setter Property="Opacity" Value="0"/>
-    </Style>
-
+    
     <Style TargetType="{x:Type local:MyTextBox}">
         <Setter Property="BorderThickness" Value="1" />
         <Setter Property="Background" Value="{StaticResource ColorBrushHalfWhite}" />
@@ -433,11 +429,11 @@
                 <Setter Property="IsTabStop" Value="False"/>
                 <Setter Property="Template">
                     <Setter.Value>
-                        <ControlTemplate TargetType="ComboBox">
+                        <ControlTemplate TargetType="{x:Type local:MyComboBox}">
                             <Grid>
                                 <Border x:Name="border" Background="{TemplateBinding Background}" CornerRadius="3" BorderThickness="1" BorderBrush="{TemplateBinding BorderBrush}" />
                                 <ToggleButton Margin="0,0,1.5,0" Foreground="{TemplateBinding BorderBrush}" IsTabStop="False" SnapsToDevicePixels="False" Focusable="False" IsChecked="{Binding IsDropDownOpen,Mode=TwoWay,RelativeSource={RelativeSource TemplatedParent}}" ClickMode="Press" />
-                                <local:MyTextBox x:Name="PART_EditableTextBox" BorderThickness="0" Margin="1.5,0,21.5,0" Padding="0" Background="{x:Null}" VerticalAlignment="Center"/>
+                                <local:MyTextBox x:Name="PART_EditableTextBox" BorderThickness="0" Margin="1.5,0,21.5,0" Padding="0" Background="{x:Null}" VerticalAlignment="Center" Hint="{TemplateBinding Hint}"/>
                                 <Popup x:Name="PART_Popup" SnapsToDevicePixels="True" VerticalOffset="-1.5" AllowsTransparency="True" IsOpen="{Binding IsDropDownOpen, Mode=TwoWay, RelativeSource={RelativeSource TemplatedParent}}" Placement="Bottom" PopupAnimation="Fade"
                        Width="{TemplateBinding Width}">
                                     <Grid x:Name="PanPopup">

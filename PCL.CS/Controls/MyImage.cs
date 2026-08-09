@@ -36,7 +36,7 @@ namespace PCL.CS.Controls
         // 占位图（下载过程中显示）
         public static readonly DependencyProperty LoadingSourceProperty =
             DependencyProperty.Register("LoadingSource", typeof(string), typeof(MyImage),
-                new PropertyMetadata("pack://application:,,,/Image/Icons/NoIcon.png"));
+                new PropertyMetadata("/PCL.CS;component/Image/Icons/NoIcon.png"));
 
         public string LoadingSource
         {
@@ -69,6 +69,23 @@ namespace PCL.CS.Controls
             await ctrl.LoadImageAsync();
         }
 
+        private static string BuildSourcePath(string sourcePath)
+        {
+            if (sourcePath is null) throw new ArgumentNullException(nameof(sourcePath));
+            if (sourcePath.StartsWith("local:", StringComparison.OrdinalIgnoreCase))
+            {
+                string path = sourcePath.Substring(6).TrimStart('/').Replace('\\', '/');
+                return $"/PCL.CS;component/{path}";
+            }
+            if (sourcePath.StartsWith("./") || sourcePath.StartsWith(".\\"))
+            {
+                string path = sourcePath.Substring(2);
+                string baseDir = Base.Path ?? AppDomain.CurrentDomain.BaseDirectory;
+                return Path.GetFullPath(Path.Combine(baseDir, path));
+            }
+            return sourcePath;
+        }
+
         private async Task LoadImageAsync()
         {
             // 取消之前的下载任务
@@ -77,6 +94,7 @@ namespace PCL.CS.Controls
             var token = _cts.Token;
 
             string source = Source;
+
             if (string.IsNullOrEmpty(source))
             {
                 // 清除图片
@@ -161,6 +179,7 @@ namespace PCL.CS.Controls
                 {
                     try
                     {
+                        path = BuildSourcePath(path);
                         var bitmap = new BitmapImage();
                         bitmap.BeginInit();
                         bitmap.UriSource = new Uri(path, UriKind.Absolute);

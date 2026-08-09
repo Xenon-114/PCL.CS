@@ -98,14 +98,14 @@ namespace PCL.CS.Modules
     {
         private readonly double _power;
         private readonly double _speed;
-        public AniEaseFluentSpeed(double Power=2,double Speed=2)
+        public AniEaseFluentSpeed(double Power = 2, double Speed = 2)
         {
             _power = Power;
             _speed = Speed;
         }
         public override double GetValue(double t)
         {
-            t=MathHelper.Clamp(t, 0, 1);
+            t = MathHelper.Clamp(t, 0, 1);
             return (1 - _speed) * Math.Pow(t, _power) + _speed * t;
         }
     }

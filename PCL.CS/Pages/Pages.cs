@@ -20,7 +20,7 @@ namespace PCL.CS.Pages
             Pages.Add(new MyPageTemplate(null, new List<MyPageRight> { new MyDeveloping() }, false, ""));
             Pages.Add(new MyPageTemplate(null, new List<MyPageRight> { new MyDeveloping() }, false, ""));
             Pages.Add(new MyPageTemplate(null, new List<MyPageRight> { new PageAbout() }, false, ""));
-            Pages.Add(new MyPageTemplate(null, new List<MyPageRight> { new MyDeveloping() }, true, "版本选择"));
+            Pages.Add(new MyPageTemplate(new PageGamesLeft(), new List<MyPageRight> { new PageGamesRight() }, true, "版本选择"));
             PagesStack.Push(0);
         }
 

@@ -62,7 +62,7 @@ namespace PCL.CS.Modules
         #region 配置属性
         public double WindowWidth { get; set; } = 870;
         public double WindowHeight { get; set; } = 580;
-
+        public double AnimationSpeed { get; set; } = 1.0;
         
         #endregion
 

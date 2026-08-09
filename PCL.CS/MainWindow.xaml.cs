@@ -143,7 +143,6 @@ namespace PCL.CS
         {
             this.IsHitTestVisible = false;
 
-            Tooltip.Dispose();
 
             Animation.Stop(MainWindowAnim);
             DoubleAnimation OutRenderAnim = new DoubleAnimation(MainRotate, RotateTransform.AngleProperty, MainRotate.Angle, MainRotate.Angle + 0.6, 180, 0, new AniEaseOutFluent(2));

@@ -1,0 +1,27 @@
+﻿<local:MyPageRight x:Class="PCL.CS.Pages.PageGamesRight"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+             xmlns:local="clr-namespace:PCL.CS.Controls"
+             mc:Ignorable="d" 
+             d:DesignHeight="450" d:DesignWidth="800">
+    <local:MyScrollViewer>
+        <Grid x:Name="MainCard">
+            <Grid.RenderTransform>
+                <TranslateTransform x:Name="MainTranslate"/>
+            </Grid.RenderTransform>
+            <local:MyCard Margin="25" VerticalAlignment="Top" CanSwap="False" Title="版本列表" >
+                <StackPanel x:Name="InstancesStack">
+                    <local:MyClickableItem Height="50" UseImage="True" ImagePath="/PCL.CS;component/Image/Icons/NoIcon.png"/>
+                </StackPanel>
+            </local:MyCard>
+            <StackPanel VerticalAlignment="Top" HorizontalAlignment="Right" Margin="25,25,25,0" Orientation="Horizontal" Height="40">
+                <TextBlock Text="分类:" Margin="5" VerticalAlignment="Center" FontSize="15" Opacity="0.9" Foreground="{DynamicResource ColorBrush1}"/>
+                <local:MyComboBox HorizontalAlignment="Right" VerticalAlignment="Center" Width="100" ToolTip="选择版本分类" Margin="0,0,5,0">
+                    <local:MyComboBoxItem Content="全部"/>
+                </local:MyComboBox>
+            </StackPanel>
+        </Grid>
+    </local:MyScrollViewer>
+</local:MyPageRight>

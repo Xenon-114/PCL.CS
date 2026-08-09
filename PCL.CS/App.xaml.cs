@@ -16,6 +16,9 @@ namespace PCL.CS
     /// </summary>
     public partial class App : Application
     {
+        public App()
+        {
+        }
         protected override void OnStartup(StartupEventArgs e)
         {
             base.OnStartup(e);
@@ -29,9 +32,6 @@ namespace PCL.CS
             //Animator.AniSpeed = 0.1;
 
 
-            ToolTipService.InitialShowDelayProperty.OverrideMetadata(typeof(DependencyObject), new FrameworkPropertyMetadata(300));
-            ToolTipService.BetweenShowDelayProperty.OverrideMetadata(typeof(DependencyObject), new FrameworkPropertyMetadata(400));
-            ToolTipService.ShowDurationProperty.OverrideMetadata(typeof(DependencyObject), new FrameworkPropertyMetadata(9999999));
             ToolTipService.PlacementProperty.OverrideMetadata(typeof(DependencyObject), new FrameworkPropertyMetadata(PlacementMode.Mouse));
             ToolTipService.HorizontalOffsetProperty.OverrideMetadata(typeof(DependencyObject), new FrameworkPropertyMetadata(8.0));
             ToolTipService.VerticalOffsetProperty.OverrideMetadata(typeof(DependencyObject), new FrameworkPropertyMetadata(4.0));

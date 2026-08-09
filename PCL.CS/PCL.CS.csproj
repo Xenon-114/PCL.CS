@@ -25,7 +25,40 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <Content Include="Image\icon.ico" />
+    <None Remove="Image\Blocks\Anvil.png" />
+    <None Remove="Image\Blocks\CobbleStone.png" />
+    <None Remove="Image\Blocks\CommandBlock.png" />
+    <None Remove="Image\Blocks\Egg.png" />
+    <None Remove="Image\Blocks\Fabric.png" />
+    <None Remove="Image\Blocks\GoldBlock.png" />
+    <None Remove="Image\Blocks\Grass.png" />
+    <None Remove="Image\Blocks\GrassPath.png" />
+    <None Remove="Image\Blocks\NeoForge.png" />
+    <None Remove="Image\Blocks\OptiFabric.png" />
+    <None Remove="Image\Blocks\RedstoneBlock.png" />
+    <None Remove="Image\Blocks\RedstoneLampOff.png" />
+    <None Remove="Image\Blocks\RedstoneLampOn.png" />
+    <None Remove="Image\Icons\Disabled.png" />
+    <None Remove="Image\Icons\NoIcon.png" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Resource Include="Image\Blocks\Anvil.png" />
+    <Resource Include="Image\Blocks\CobbleStone.png" />
+    <Resource Include="Image\Blocks\CommandBlock.png" />
+    <Resource Include="Image\Blocks\Egg.png" />
+    <Resource Include="Image\Blocks\Fabric.png" />
+    <Resource Include="Image\Blocks\GoldBlock.png" />
+    <Resource Include="Image\Blocks\Grass.png" />
+    <Resource Include="Image\Blocks\GrassPath.png" />
+    <Resource Include="Image\Blocks\NeoForge.png" />
+    <Resource Include="Image\Blocks\OptiFabric.png" />
+    <Resource Include="Image\Blocks\RedstoneBlock.png" />
+    <Resource Include="Image\Blocks\RedstoneLampOff.png" />
+    <Resource Include="Image\Blocks\RedstoneLampOn.png" />
+    <Resource Include="Image\icon.ico" />
+    <Resource Include="Image\Icons\Disabled.png" />
+    <Resource Include="Image\Icons\NoIcon.png" />
   </ItemGroup>
 
   <ItemGroup>
@@ -44,5 +77,4 @@
     </PackageReference>
     <PackageReference Include="System.Security.Cryptography.ProtectedData" Version="10.0.10" />
   </ItemGroup>
-
 </Project>

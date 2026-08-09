@@ -13,6 +13,17 @@ namespace PCL.CS.Controls
 {
     public class MyComboBox:ComboBox
     {
+        public string Hint
+        {
+            get { return (string)GetValue(HintProperty); }
+            set { SetValue(HintProperty, value); }
+        }
+
+        // Using a DependencyProperty as the backing store for Hint.  This enables animation, styling, binding, etc...
+        public static readonly DependencyProperty HintProperty =
+            DependencyProperty.Register(nameof(Hint), typeof(string), typeof(MyComboBox), new PropertyMetadata(null));
+
+
         public MyComboBox()
         {
             this.DropDownOpened += MyComboBox_DropDownOpened;
