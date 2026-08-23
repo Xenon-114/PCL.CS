@@ -52,7 +52,7 @@ namespace PCL.CS.Modules
             lock (Locker)
                 File.WriteAllText(ConfigPath, JsonConvert.SerializeObject(Current));
         }
-        
+
         /// <summary>
         /// 强制重载配置文件
         /// </summary>
@@ -63,6 +63,7 @@ namespace PCL.CS.Modules
         public double WindowWidth { get; set; } = 870;
         public double WindowHeight { get; set; } = 580;
         public double AnimationSpeed { get; set; } = 1.0;
+        public List<KeyValuePair<string,string>> MinecraftGroups { get; set; } = new();
         
         #endregion
 

@@ -529,9 +529,8 @@
 
     <Style TargetType="{x:Type local:MyListItem}">
         <Setter Property="OverridesDefaultStyle" Value="True" />
-        <Setter Property="ToolTipService.Placement" Value="Relative" />
+        <Setter Property="ToolTipService.Placement" Value="Right" />
         <Setter Property="ToolTipService.VerticalOffset" Value="-2" />
-        <Setter Property="ToolTipService.HorizontalOffset" Value="200" />
         <Setter Property="FocusVisualStyle" Value="{x:Null}" />
         <Setter Property="Template">
             <Setter.Value>

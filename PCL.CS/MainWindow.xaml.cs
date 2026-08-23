@@ -64,6 +64,10 @@ namespace PCL.CS
             this.Width = Config.Current.WindowWidth;
 
             Tooltip = new MyTooltip(this);
+            SolidColorBrush BackBrush = new() { Opacity = 0.95 };
+            BackBrush.SetResourceReference(SolidColorBrush.ColorProperty, "ColorObjectWhite");
+            Tooltip.Background = BackBrush;
+            Tooltip.SetResourceReference(MyTooltip.BorderBrushProperty, "ColorBrushGray5");
 
             CurrentWindow = this;
             MWindow.TitleBarDrag += (s, e) => DragMove();

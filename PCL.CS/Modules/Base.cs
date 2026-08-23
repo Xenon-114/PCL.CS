@@ -10,6 +10,7 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Input;
+using System.Windows.Markup;
 using System.Windows.Media;
 using System.Windows.Media.Media3D;
 using System.Windows.Threading;
@@ -250,9 +251,19 @@ namespace PCL.CS.Modules
         }
         #endregion
 
-        public static void throwwarn()
+        public static object LoadFromXml(XElement xElement)
         {
-
+            if (xElement is null) throw new ArgumentNullException(nameof(xElement));
+            using var xReader = xElement.CreateReader();
+            return XamlReader.Load(xReader);
+        }
+        public static T LoadFromXml<T>(XElement xElement)
+        {
+            if (xElement is null) throw new ArgumentNullException(nameof(xElement));
+            using var xReader = xElement.CreateReader();
+            object Result = XamlReader.Load(xReader);
+            if (Result is not T TResult) throw new XamlParseException("转换失败，因为类型不匹配");
+            return TResult;
         }
     }
 

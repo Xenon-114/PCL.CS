@@ -62,8 +62,8 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\XeF4Core\XeF4Core\XeF4Core.csproj" />
     <ProjectReference Include="..\XeF4Core.WPF\XeF4Core.WPF.csproj" />
+    <ProjectReference Include="..\XeF4Core\XeF4Core.csproj" />
   </ItemGroup>
 
   <ItemGroup>

@@ -25,7 +25,12 @@ namespace PCL.CS.Controls
         public Geometry Logo
         {
             get => PathLogo.Data;
-            set => PathLogo.Data = value;
+            set
+            {
+                PathLogo.Data = value;
+                PathLogo.Width = 34;
+                PathLogo.Visibility = value is null ? Visibility.Collapsed : Visibility.Visible;
+            }
         }
 
         private ScaleTransform _LogoScale = new ScaleTransform();
@@ -75,15 +80,22 @@ namespace PCL.CS.Controls
 
             Grid MainGrid = new Grid();
             this.VisualTree = MainGrid;
-            MainGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(34, GridUnitType.Pixel) });
+            MainGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(0, GridUnitType.Auto) });
             MainGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
             MainGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(0, GridUnitType.Auto) });
+
+            StackPanel LogoStack = new StackPanel();
+            LogoStack.Orientation = Orientation.Horizontal;
+
+            Control LeftPadding = new Control();
+            LeftPadding.Width = 8;
 
             PathLogo = new Path();
             PathLogo.Stretch = Stretch.Uniform;
             PathLogo.RenderTransform = _LogoScale;
             PathLogo.RenderTransformOrigin = new Point(0.5, 0.5);
-            PathLogo.Margin = new Thickness(8, 4, 6, 4);
+            PathLogo.Margin = new Thickness(0, 4, 6, 4);
+            PathLogo.Visibility = Visibility.Collapsed;
             PathLogo.SetBinding(Path.FillProperty, new Binding
             {
                 Source = this,
@@ -91,8 +103,13 @@ namespace PCL.CS.Controls
                 Mode = BindingMode.TwoWay,
                 UpdateSourceTrigger = UpdateSourceTrigger.PropertyChanged
             });
-            Grid.SetColumn(PathLogo, 0);
-            MainGrid.Children.Add(PathLogo);
+
+            LogoStack.Children.Add(LeftPadding);
+            LogoStack.Children.Add(PathLogo);
+
+            Grid.SetColumn(LogoStack, 0);
+            MainGrid.Children.Add(LogoStack);
+            
 
             Grid ContentGrid = new Grid();
             ContentGrid.RowDefinitions.Add(new RowDefinition { Height = new GridLength(1, GridUnitType.Star) });
@@ -128,6 +145,7 @@ namespace PCL.CS.Controls
             LabInfo.IsHitTestVisible = false;
             LabInfo.Margin = new Thickness(2, 0, 2, 0);
             LabInfo.Visibility = Visibility.Collapsed;
+            LabInfo.SetResourceReference(TextBlock.ForegroundProperty, "ColorBrushGray1");
             LabInfo.SetBinding(TextBlock.TextProperty, new Binding
             {
                 Source = this,
@@ -152,7 +170,7 @@ namespace PCL.CS.Controls
             ButtonPanel.SetBinding(OpacityProperty, new Binding
             {
                 Source = this,
-                Path = new PropertyPath("ButtonsOpacity"),
+                Path = new PropertyPath(nameof(ButtonsOpacity)),
                 Mode = BindingMode.OneWay,
                 UpdateSourceTrigger = UpdateSourceTrigger.PropertyChanged
             });

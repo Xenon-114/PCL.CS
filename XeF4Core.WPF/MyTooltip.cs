@@ -13,7 +13,7 @@ using System.Windows.Threading;
 
 namespace XeF4Core.WPF;
 
-public class MyTooltip : DependencyObject
+public sealed class MyTooltip : DependencyObject
 {
     #region 样式画刷
 
@@ -74,9 +74,6 @@ public class MyTooltip : DependencyObject
     #region 实例状态与字段
 
     private readonly FrameworkElement _root;
-    private bool _isDisposed;
-    private bool _closing;
-    private Point _cursor;
     private Popup? _flyout;
     private Border? _shell;
     private ScaleTransform? _scaler;
@@ -84,7 +81,6 @@ public class MyTooltip : DependencyObject
     private Storyboard? CloseStory;
     private DispatcherTimer? _latch;
     private HwndSourceHook? _transparentHook;
-    private bool _layoutSubscribed;
 
     #endregion
 
