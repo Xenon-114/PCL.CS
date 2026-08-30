@@ -25,6 +25,14 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Compile Remove="Tools\**" />
+    <EmbeddedResource Remove="Tools\**" />
+    <None Remove="Tools\**" />
+    <Page Remove="Tools\**" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Remove="ImageGenBuilder.exe" />
     <None Remove="Image\Blocks\Anvil.png" />
     <None Remove="Image\Blocks\CobbleStone.png" />
     <None Remove="Image\Blocks\CommandBlock.png" />
@@ -43,22 +51,22 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Resource Include="Image\Blocks\Anvil.png" />
-    <Resource Include="Image\Blocks\CobbleStone.png" />
-    <Resource Include="Image\Blocks\CommandBlock.png" />
-    <Resource Include="Image\Blocks\Egg.png" />
-    <Resource Include="Image\Blocks\Fabric.png" />
-    <Resource Include="Image\Blocks\GoldBlock.png" />
-    <Resource Include="Image\Blocks\Grass.png" />
-    <Resource Include="Image\Blocks\GrassPath.png" />
-    <Resource Include="Image\Blocks\NeoForge.png" />
-    <Resource Include="Image\Blocks\OptiFabric.png" />
-    <Resource Include="Image\Blocks\RedstoneBlock.png" />
-    <Resource Include="Image\Blocks\RedstoneLampOff.png" />
-    <Resource Include="Image\Blocks\RedstoneLampOn.png" />
+    <EmbeddedResource Include="Image\Blocks\Anvil.png" />
+    <EmbeddedResource Include="Image\Blocks\CobbleStone.png" />
+    <EmbeddedResource Include="Image\Blocks\CommandBlock.png" />
+    <EmbeddedResource Include="Image\Blocks\Egg.png" />
+    <EmbeddedResource Include="Image\Blocks\Fabric.png" />
+    <EmbeddedResource Include="Image\Blocks\GoldBlock.png" />
+    <EmbeddedResource Include="Image\Blocks\Grass.png" />
+    <EmbeddedResource Include="Image\Blocks\GrassPath.png" />
+    <EmbeddedResource Include="Image\Blocks\NeoForge.png" />
+    <EmbeddedResource Include="Image\Blocks\OptiFabric.png" />
+    <EmbeddedResource Include="Image\Blocks\RedstoneBlock.png" />
+    <EmbeddedResource Include="Image\Blocks\RedstoneLampOff.png" />
+    <EmbeddedResource Include="Image\Blocks\RedstoneLampOn.png" />
     <Resource Include="Image\icon.ico" />
-    <Resource Include="Image\Icons\Disabled.png" />
-    <Resource Include="Image\Icons\NoIcon.png" />
+    <EmbeddedResource Include="Image\Icons\Disabled.png" />
+    <EmbeddedResource Include="Image\Icons\NoIcon.png" />
   </ItemGroup>
 
   <ItemGroup>
@@ -77,4 +85,14 @@
     </PackageReference>
     <PackageReference Include="System.Security.Cryptography.ProtectedData" Version="10.0.10" />
   </ItemGroup>
+
+  <PropertyGroup>
+    <!-- 定义工具路径和参数 -->
+    <ImageGenTool>$(MSBuildProjectDirectory)\Tools\ImageGenBuilder.exe</ImageGenTool>
+    <ProjectPath>$(MSBuildProjectDirectory)</ProjectPath>
+  </PropertyGroup>
+  <Target Name="GenerateImagesXaml" BeforeTargets="BeforeBuild" Condition="Exists('$(ImageGenTool)')">
+    <!-- 运行小工具，参数用空格分隔 -->
+    <Exec Command="&quot;$(ImageGenTool)&quot; &quot;$(MSBuildProjectDirectory)&quot;" ContinueOnError="WarnAndContinue" StandardOutputImportance="High" />
+  </Target>
 </Project>

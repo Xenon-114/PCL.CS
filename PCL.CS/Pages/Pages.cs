@@ -26,7 +26,7 @@ namespace PCL.CS.Pages
 
         public static List<MyPageTemplate> Pages = new List<MyPageTemplate>();
         private static Stack<int> PagesStack = new Stack<int>();
-        public static double PageIndex { get { return PagesStack.Peek(); } }
+        public static int PageIndex { get { return PagesStack.Peek(); } }
         /// <summary>
         /// 更改页面
         /// </summary>

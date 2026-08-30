@@ -16,5 +16,9 @@ namespace PCL.CS.Modules
         {
             return NetDownloader.Download(url, localPath);
         }
+        public static Task<string> Download(string url, bool AllowCache = false)
+        {
+            return NetDownloader.Download(url, AllowCache);
+        }
     }
 }

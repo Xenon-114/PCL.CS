@@ -567,6 +567,7 @@ public sealed class MyTooltip : DependencyObject
 
     private void _PlaceNear()
     {
+        if (!_root.IsLoaded && !_root.IsVisible) return;
         if (_flyout is null) return;
         var target = Target;
         PlacementMode mode;
@@ -616,9 +617,7 @@ public sealed class MyTooltip : DependencyObject
             _flyout.PlacementRectangle = ToolTipService.GetPlacementRectangle(target);
 
             double offset = _flyout.HorizontalOffset;
-            // 给它一个极小的增量，触发重定位
             _flyout.HorizontalOffset = offset + 0.000001;
-            // 立即恢复原值
             _flyout.HorizontalOffset = offset;
         }
     }

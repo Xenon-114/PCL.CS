@@ -11,14 +11,14 @@ using System.Windows.Media;
 
 namespace PCL.CS.Controls
 {
-    public class MyDropShadow: Decorator
+    public class MyDropShadow : Decorator
     {
         private GuidelineSet guidelineSet = null;
         private PathFigure figure = null;
-        private Queue<LineSegment> LineSegments = new Queue<LineSegment>();
+        private readonly Queue<LineSegment> LineSegments = new Queue<LineSegment>();
         private void ClearPathSegs(PathSegmentCollection Segs)
         {
-            foreach(PathSegment seg in Segs)
+            foreach (PathSegment seg in Segs)
             {
                 LineSegments.Enqueue(seg as LineSegment);
             }
@@ -95,12 +95,11 @@ namespace PCL.CS.Controls
             };
 
             // 应用像素对齐指南，防止渲染时出现模糊边缘
-            if (guidelineSet is null)
-                guidelineSet = new GuidelineSet();
+            guidelineSet ??= new GuidelineSet();
             guidelineSet.GuidelinesX = new DoubleCollection(guidelineSetX);
             guidelineSet.GuidelinesY = new DoubleCollection(guidelineSetY);
             drawingContext.PushGuidelineSet(guidelineSet);
-            
+
 
             // 为了绘制角区域，需要将圆角半径加上阴影半径
             // 这样角区域就能包含阴影模糊部分
@@ -232,8 +231,7 @@ namespace PCL.CS.Controls
 
                 figure.IsClosed = true;
 
-                if (geometry is null)
-                    geometry = new PathGeometry();
+                geometry ??= new PathGeometry();
                 geometry.Figures.Clear();
                 geometry.Figures.Add(figure);
 
@@ -250,24 +248,24 @@ namespace PCL.CS.Controls
         public Color Color
         {
             get { return _Color; }
-            set {  SetValue(ColorProperty, value);_Color = value; }
+            set { SetValue(ColorProperty, value); _Color = value; }
         }
-        private Color _Color= Color.FromArgb(0x71, 0x0, 0x0, 0x0);
+        private Color _Color = Color.FromArgb(0x71, 0x0, 0x0, 0x0);
         /// <summary>
         /// 阴影颜色依赖属性
         /// </summary>
         public static readonly DependencyProperty ColorProperty =
             DependencyProperty.Register("Color", typeof(Color), typeof(MyDropShadow),
-                new PropertyMetadata(Color.FromArgb(0x71,0x0,0x0,0x0), ReSetBrush));
+                new PropertyMetadata(Color.FromArgb(0x71, 0x0, 0x0, 0x0), ReSetBrush));
         /// <summary>
         /// 阴影模糊半径
         /// </summary>
         public double ShadowRadius
         {
             get { return _ShadowRadius; }
-            set { SetValue(ShadowRadiusProperty, value);_ShadowRadius = value; }
+            set { SetValue(ShadowRadiusProperty, value); _ShadowRadius = value; }
         }
-        private double _ShadowRadius=5.0;
+        private double _ShadowRadius = 5.0;
         /// <summary>
         /// 阴影模糊半径依赖属性
         /// </summary>
@@ -280,7 +278,7 @@ namespace PCL.CS.Controls
         public CornerRadius CornerRadius
         {
             get { return _CornerRadius; }
-            set { SetValue(CornerRadiusProperty, value);_CornerRadius = value; }
+            set { SetValue(CornerRadiusProperty, value); _CornerRadius = value; }
         }
         private CornerRadius _CornerRadius = new CornerRadius();
         /// <summary>
@@ -308,7 +306,7 @@ namespace PCL.CS.Controls
         }
         private bool IsChanged = false;
         private Queue<GradientStop> StopsQueue = new Queue<GradientStop>();//保存对象以便复用
-        private GradientStop GetGradientStop(Color color,double Offset)
+        private GradientStop GetGradientStop(Color color, double Offset)
         {
             if (StopsQueue.Any())
             {
@@ -322,11 +320,11 @@ namespace PCL.CS.Controls
                 return new GradientStop(color, Offset);
             }
         }
-        private GradientStopCollection GradientStops(Color C,double cornerRadius,GradientStopCollection GSC = null)
+        private GradientStopCollection GradientStops(Color C, double cornerRadius, GradientStopCollection GSC = null)
         {
-            if (GSC is null) GSC = new GradientStopCollection();
+            GSC ??= new GradientStopCollection();
             double gradientScale = 1 / (ShadowRadius + cornerRadius);
-            Color thisColor=C;
+            Color thisColor = C;
             ClearGStops(GSC);
             //加入一个渐变点
             GSC.Add(GetGradientStop(thisColor, (ShadowRadius * 0.1 + cornerRadius) * gradientScale));
@@ -346,32 +344,27 @@ namespace PCL.CS.Controls
         private void ClearGStops(GradientStopCollection TargetGSC)
         {
             if (TargetGSC is null) return;
-            foreach(GradientStop Gstop in TargetGSC)
+            foreach (GradientStop Gstop in TargetGSC)
             {
                 StopsQueue.Enqueue(Gstop);
             }
             TargetGSC.Clear();
         }
-        
+
         private void CreateBrush(Color C, CornerRadius cornerRadius)
         {
             //先保存一下我刚生成的渐变点
             GradientStopCollection sideGSC = TopBrush?.GradientStops;
-            if(sideGSC is null)
-                sideGSC = new GradientStopCollection();
+            sideGSC ??= new GradientStopCollection();
             sideGSC = GradientStops(C, 0, sideGSC);
             if (MidBrush is null)
                 MidBrush = new SolidColorBrush(C);
             else
                 MidBrush.Color = C;
-            if (TopBrush is null)
-                TopBrush = new LinearGradientBrush(sideGSC, new Point(0, 1), new Point(0, 0));
-            if (BottomBrush is null)
-                BottomBrush = new LinearGradientBrush(sideGSC, new Point(0, 0), new Point(0, 1));
-            if (LeftBrush is null)
-                LeftBrush = new LinearGradientBrush(sideGSC, new Point(1, 0), new Point(0, 0));
-            if (RightBrush is null)
-                RightBrush = new LinearGradientBrush(sideGSC, new Point(0, 0), new Point(1, 0));
+            TopBrush ??= new LinearGradientBrush(sideGSC, new Point(0, 1), new Point(0, 0));
+            BottomBrush ??= new LinearGradientBrush(sideGSC, new Point(0, 0), new Point(0, 1));
+            LeftBrush ??= new LinearGradientBrush(sideGSC, new Point(1, 0), new Point(0, 0));
+            RightBrush ??= new LinearGradientBrush(sideGSC, new Point(0, 0), new Point(1, 0));
             if (TLBrush is null)
                 TLBrush = new RadialGradientBrush(cornerRadius.TopLeft == 0 ? sideGSC : GradientStops(C, CornerRadius.TopLeft))
                 {
@@ -401,7 +394,7 @@ namespace PCL.CS.Controls
                     GradientOrigin = new Point(1, 0)
                 };
             else
-                BLBrush.GradientStops = cornerRadius.TopRight == 0 ? sideGSC : GradientStops(C, CornerRadius.TopRight,BLBrush.GradientStops);
+                BLBrush.GradientStops = cornerRadius.TopRight == 0 ? sideGSC : GradientStops(C, CornerRadius.TopRight, BLBrush.GradientStops);
             if (BRBrush is null)
                 BRBrush = new RadialGradientBrush(cornerRadius.TopRight == 0 ? sideGSC : GradientStops(C, CornerRadius.TopRight))
                 {
@@ -411,11 +404,11 @@ namespace PCL.CS.Controls
                     GradientOrigin = new Point(0, 0)
                 };
             else
-                BRBrush.GradientStops = cornerRadius.TopRight == 0 ? sideGSC : GradientStops(C, CornerRadius.TopRight,BRBrush.GradientStops);
+                BRBrush.GradientStops = cornerRadius.TopRight == 0 ? sideGSC : GradientStops(C, CornerRadius.TopRight, BRBrush.GradientStops);
         }
         //资源缓存
-        private SolidColorBrush MidBrush=null;
-        private LinearGradientBrush TopBrush=null;
+        private SolidColorBrush MidBrush = null;
+        private LinearGradientBrush TopBrush = null;
         private LinearGradientBrush BottomBrush = null;
         private LinearGradientBrush LeftBrush = null;
         private LinearGradientBrush RightBrush = null;
@@ -449,6 +442,8 @@ namespace PCL.CS.Controls
             figure = null;
             geometry = null;
             guidelineSet = null;
+            // 标记为已更改
+            IsChanged = true;
         }
     }
 }

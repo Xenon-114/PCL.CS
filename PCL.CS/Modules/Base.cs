@@ -40,7 +40,7 @@ namespace PCL.CS.Modules
         public static bool OnRunning { get; private set; } = false;
         public static void Initialize()
         {
-            UIDispatcher = Dispatcher.CurrentDispatcher;
+            UIDispatcher = App.Current.Dispatcher;
             OnRunning = true;
         }
         public static Dispatcher UIDispatcher;
@@ -242,11 +242,11 @@ namespace PCL.CS.Modules
             logs.LogTime = whenLog;
             logs.LogThread = (Thread.CurrentThread.Name == null ? "Main" : Thread.CurrentThread.Name);
             logs.LogContent = $"[Exception]运行出现错误！\n详细信息：\n";
-            string ExStr = "";
-            ExStr += "引发错误：" + ex.GetType().ToString() + "\n";
-            ExStr += "发生自线程：" + (Thread.CurrentThread.Name == null ? "Main" : Thread.CurrentThread.Name)+"\n";
-            ExStr += ex.ToString();
-            logs.LogContent += ExStr;
+            StringBuilder ExStr = new StringBuilder();
+            ExStr.AppendLine("引发错误：" + ex.GetType().ToString() );
+            ExStr.AppendLine("发生自线程：" + (Thread.CurrentThread.Name == null ? "Main" : Thread.CurrentThread.Name));
+            ExStr.AppendLine(ex.ToString());
+            logs.LogContent += ExStr.ToString();
             LogList.Enqueue(logs);
         }
         #endregion

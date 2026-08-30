@@ -34,7 +34,6 @@ namespace PCL.CS.Pages
 
         private void CreateMinecraftFolder(object sender, RoutedEventArgs e)
         {
-            if (Minecraft.Local is not null && Minecraft.Local.IsAvailable) return;
             if(!Directory.Exists(Minecraft.LocalPath))
                 Directory.CreateDirectory(Minecraft.LocalPath);
             var McGroup = XeF4Core.MinecraftCore.MinecraftGroup.FromMinecraftPath(Minecraft.LocalPath);
@@ -72,8 +71,6 @@ namespace PCL.CS.Pages
         {
             Minecrafts.Clear();
             Minecraft.Refresh();
-            if (Minecraft.Local is not null)
-                Minecrafts.Add(Minecraft.Local);
             Minecrafts.AddRange(Minecraft.McGroups);
             Main.Hint($"加载中，已加载{Minecrafts.Count}个Minecaft文件夹");
             RefreshUI();

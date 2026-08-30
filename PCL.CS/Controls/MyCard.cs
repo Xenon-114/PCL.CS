@@ -127,6 +127,19 @@ namespace PCL.CS.Controls
                 return ContentPre.ActualHeight;
             }
         }
+        private Visibility ArrowVisibility
+        {
+            get => _ArrowVis;
+            set
+            {
+                lock (VisibilityLocker)
+                    if (Arrow is not null)
+                        Arrow.Visibility = value;
+                _ArrowVis = value;
+            }
+        }
+        private object VisibilityLocker = new object();
+        private Visibility _ArrowVis = Visibility.Visible;
         public MyCard()
         {
             this.Loaded += (s, e) =>
@@ -136,7 +149,7 @@ namespace PCL.CS.Controls
                 ContentAnimHeight = ContentHeight;
                 BtnRotate = new RotateTransform();
                 MainRefresh(false);
-                Arrow.Visibility = CanSwap ? Visibility.Visible : Visibility.Hidden;
+                ArrowVisibility = CanSwap ? Visibility.Visible : Visibility.Hidden;
             };
             this.BtnRotate = new RotateTransform();
         }
@@ -157,7 +170,12 @@ namespace PCL.CS.Controls
                 if (e.NewSize.Height != e.PreviousSize.Height) ContentSizeChange();
             };
             PART_Title = GetTemplateChild("PART_Title") as UIElement;
-            Arrow = GetTemplateChild("PART_Arrow") as UIElement;
+
+            lock (VisibilityLocker)
+            {
+                Arrow = GetTemplateChild("PART_Arrow") as UIElement;
+                Arrow.Visibility = ArrowVisibility;
+            }
             (GetTemplateChild("PART_BtnExpand") as Button).Click += EventUnSwap;
             (GetTemplateChild("PART_BtnSwap") as Button).Click += EventSwap;
         }

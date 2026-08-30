@@ -95,19 +95,22 @@ namespace PCL.CS.Modules
         #region 提示
 
 
-        public static void Hint(string Text,HintColorState State=HintColorState.Normal)
+        public static void Hint(string Text, HintColorState State = HintColorState.Normal)
         {
             Text = Text.Replace("\n", "").Replace("\r", "");
-            if (MainWindow.Current is null)
+            async void a()
             {
-                Func<Task> a = async () =>
+                await MainWindow.LoadedTask.Task;
+                try
                 {
-                    await MainWindow.LoadedTask.Task;
                     Base.UIDispatcher.Invoke(() => RunHint(Text, State));
-                };
-                _ = a();
+                }
+                catch(Exception ex)
+                {
+                    Base.Log(ex);
+                }
             }
-            else Base.UIDispatcher.Invoke(() => RunHint(Text, State));
+            a();
         }
 
         private static void RunHint(string Text,HintColorState State)

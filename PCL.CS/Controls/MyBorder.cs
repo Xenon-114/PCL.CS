@@ -57,7 +57,7 @@ namespace PCL.CS.Controls
             var MainBorder = GetTemplateChild("PART_MainBorder") as Border;
             MainBorder.MouseEnter += (s, e) => MouseIn();
             MainBorder.MouseLeave += (s, e) => MouseOut();
-            
+
         }
         private AnimationGroup ColorAnim;
         private void MouseIn()

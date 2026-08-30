@@ -1,0 +1,21 @@
+<!--本段代码由工具自动生成-->
+<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:local="clr-namespace:PCL.CS.Controls">
+    <local:MyImageSource x:Key="Image.Blocks.Anvil.png" SourcePath="Image/Blocks/Anvil.png"/>
+    <local:MyImageSource x:Key="Image.Blocks.CobbleStone.png" SourcePath="Image/Blocks/CobbleStone.png"/>
+    <local:MyImageSource x:Key="Image.Blocks.CommandBlock.png" SourcePath="Image/Blocks/CommandBlock.png"/>
+    <local:MyImageSource x:Key="Image.Blocks.Egg.png" SourcePath="Image/Blocks/Egg.png"/>
+    <local:MyImageSource x:Key="Image.Blocks.Fabric.png" SourcePath="Image/Blocks/Fabric.png"/>
+    <local:MyImageSource x:Key="Image.Blocks.GoldBlock.png" SourcePath="Image/Blocks/GoldBlock.png"/>
+    <local:MyImageSource x:Key="Image.Blocks.Grass.png" SourcePath="Image/Blocks/Grass.png"/>
+    <local:MyImageSource x:Key="Image.Blocks.GrassPath.png" SourcePath="Image/Blocks/GrassPath.png"/>
+    <local:MyImageSource x:Key="Image.Blocks.NeoForge.png" SourcePath="Image/Blocks/NeoForge.png"/>
+    <local:MyImageSource x:Key="Image.Blocks.OptiFabric.png" SourcePath="Image/Blocks/OptiFabric.png"/>
+    <local:MyImageSource x:Key="Image.Blocks.RedstoneBlock.png" SourcePath="Image/Blocks/RedstoneBlock.png"/>
+    <local:MyImageSource x:Key="Image.Blocks.RedstoneLampOff.png" SourcePath="Image/Blocks/RedstoneLampOff.png"/>
+    <local:MyImageSource x:Key="Image.Blocks.RedstoneLampOn.png" SourcePath="Image/Blocks/RedstoneLampOn.png"/>
+    <local:MyImageSource x:Key="Image.Icons.Disabled.png" SourcePath="Image/Icons/Disabled.png"/>
+    <local:MyImageSource x:Key="Image.Icons.NoIcon.png" SourcePath="Image/Icons/NoIcon.png"/>
+    <local:MyImageSource x:Key="Image.icon.ico" SourcePath="Image/icon.ico"/>
+</ResourceDictionary>

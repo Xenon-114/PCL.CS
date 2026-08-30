@@ -19,7 +19,7 @@ namespace PCL.CS.Controls
         private readonly UIElement VisualTree = null;
 
         private Path PathLogo { get; }
-        private Image Image { get; }
+        private MyImage Image { get; }
 
 
 
@@ -48,11 +48,16 @@ namespace PCL.CS.Controls
 
 
 
-        public ImageSource ImagePath
+
+        public MyImageSource ImagePath
         {
-            get => Image.Source;
-            set => Image.Source = value;
+            get { return (MyImageSource)GetValue(ImagePathProperty); }
+            set { SetValue(ImagePathProperty, value); }
         }
+
+        // Using a DependencyProperty as the backing store for ImagePath.  This enables animation, styling, binding, etc...
+        public static readonly DependencyProperty ImagePathProperty =
+            DependencyProperty.Register(nameof(ImagePath), typeof(MyImageSource), typeof(MyClickableItem), new PropertyMetadata(null));
 
         public Geometry Logo
         {
@@ -126,6 +131,12 @@ namespace PCL.CS.Controls
             Image = new MyImage();
             Image.Stretch = Stretch.Uniform;
             Image.Visibility = Visibility.Collapsed;
+            Image.SetBinding(MyImage.SourceProperty, new Binding(nameof(ImagePath))
+            {
+                Source = this,
+                UpdateSourceTrigger = UpdateSourceTrigger.PropertyChanged,
+                Mode = BindingMode.OneWay
+            });
 
             LogoStack.Children.Add(Image);
 

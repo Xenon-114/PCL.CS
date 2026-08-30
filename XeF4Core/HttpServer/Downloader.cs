@@ -236,6 +236,24 @@ public class Downloader
     }
     #region 公共方法
     /// <summary>
+    /// 从指定URL下载文件到缓存文件夹。
+    /// </summary>
+    /// <param name="url">指定URL</param>
+    /// <param name="AllowCache">是否允许缓存。若允许，将尽量使用缓存。</param>
+    /// <returns></returns>
+    /// <exception cref="WebException"></exception>
+    public async Task<string> Download(string url, bool AllowCache = false)
+    {
+        string localpath = Path.Combine(Path.GetTempPath(), Core.LauncherShort, url.GetMd5Hash());
+        if (AllowCache && File.Exists(localpath) && DateTime.Now - File.GetLastWriteTime(localpath) < TimeSpan.FromDays(1))
+            return localpath;
+        else
+        {
+            await Download(url, localpath);
+            return localpath;
+        }
+    }
+    /// <summary>
     /// 下载。
     /// </summary>
     /// <param name="url"></param>

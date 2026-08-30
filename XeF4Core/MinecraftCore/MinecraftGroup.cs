@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 
@@ -7,8 +8,12 @@ namespace XeF4Core.MinecraftCore;
 /// <summary>
 /// 一组Minecraft，对应一个Minecraft文件夹
 /// </summary>
-public class MinecraftGroup : IDisposable
+public class MinecraftGroup : IDisposable,IEnumerable<Minecraft>,IEnumerable
 {
+    #region 迭代器
+    IEnumerator<Minecraft> IEnumerable<Minecraft>.GetEnumerator() => minecrafts.GetEnumerator();
+    IEnumerator IEnumerable.GetEnumerator() => minecrafts.GetEnumerator();
+    #endregion
     private bool _disposed = false;
     private readonly List<Minecraft> minecrafts = [];
     /// <summary>

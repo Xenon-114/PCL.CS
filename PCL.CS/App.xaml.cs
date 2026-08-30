@@ -5,6 +5,7 @@ using System.Configuration;
 using System.Data;
 using System.IO;
 using System.Linq;
+using System.Reflection;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
@@ -23,6 +24,7 @@ namespace PCL.CS
         protected override void OnStartup(StartupEventArgs e)
         {
             base.OnStartup(e);
+
             Animator.AniFPS = 100;
             Animator.StartThread();
             Base.Initialize();
@@ -38,7 +40,11 @@ namespace PCL.CS
             ToolTipService.VerticalOffsetProperty.OverrideMetadata(typeof(DependencyObject), new FrameworkPropertyMetadata(4.0));
             ToolTipService.InitialShowDelayProperty.OverrideMetadata(typeof(DependencyObject), new FrameworkPropertyMetadata(300));
 
-            Minecraft.OnSelectGroupChanged += (s, e) => PCL.CS.Modules.Main.Hint($"已选中位于{e.MinecraftDirectory.FullName}的游戏组");
+            Minecraft.Init();
+
+            Minecraft.OnSelectGroupChanged += (s, e) => PCL.CS.Modules.Main.Hint($"已选中位于{e?.MinecraftDirectory.FullName}的游戏组");
+
+            Modules.Main.Hint($"{{{^114514}}}");
         }
     }
 }
