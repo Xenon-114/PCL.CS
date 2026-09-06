@@ -71,9 +71,9 @@ public class Java
     /// <param name="args"></param>
     /// <returns></returns>
     /// <exception cref="FileNotFoundException"></exception>
-    public async Task<ProcessResult> RunCommandAsync(string args)
+    public Task<ProcessResult> RunCommandAsync(string args)
     {
-        return await RunCommandAsync(ExecutablePath, args);
+        return RunCommandAsync(ExecutablePath, args);
     }
     /// <summary>
     /// 传递主类来启动一个程序
@@ -104,13 +104,13 @@ public class Java
             if (JvmArgs.Contains("-cp")) throw new ArgumentException($"JVM参数中已包含ClassPaths，请不要重复添加。{ClassPaths.IsNullOrEmpty()}");
             sb.Append($"-cp \"{string.Join(";", ClassPaths)}\" ");
         }
-        
+
         sb.Append(MainClass);
         if (Args is not null)
             sb.Append(' ').Append(string.Join(" ", Args));
         string Command = sb.ToString();
 
-        return StartProcess(Command,true);
+        return StartProcess(Command, true);
     }
 
     /// <summary>
@@ -121,7 +121,7 @@ public class Java
     /// <param name="args">主类参数</param>
     /// <returns></returns>
     /// <exception cref="ArgumentNullException"></exception>
-    public Process RunProcessWithJar(string[]? JvmArgs,string JarPath, string[]? args)
+    public Process RunProcessWithJar(string[]? JvmArgs, string JarPath, string[]? args)
     {
         //预先判断
         if (JarPath is null) throw new ArgumentNullException(nameof(JarPath));
@@ -145,7 +145,7 @@ public class Java
     /// <param name="args"></param>
     /// <returns></returns>
     /// <exception cref="FileNotFoundException"></exception>
-    public static async Task<ProcessResult>RunCommandAsync(string file,string args)
+    public static async Task<ProcessResult> RunCommandAsync(string file, string args)
     {
         if (!File.Exists(file)) throw new FileNotFoundException("无法找到Java主程序");
         var startInfo = new ProcessStartInfo(file, args)
@@ -202,6 +202,8 @@ public class Java
     /// <returns></returns>
     public Process StartProcess(string arguments, bool redirectOutput = false)
     {
+        Core.Log($"执行命令：{ExecutablePath} {arguments}");
+
         var startInfo = new ProcessStartInfo
         {
             FileName = ExecutablePath,
@@ -216,7 +218,7 @@ public class Java
         return process;
     }
 
-    private Java(string executablePath,VersionCode version,Architecture architecture,JavaVendor vendor)
+    private Java(string executablePath, VersionCode version, Architecture architecture, JavaVendor vendor)
     {
         ExecutablePath = executablePath;
         Version = version;
@@ -236,9 +238,11 @@ public class Java
     {
         if (string.IsNullOrEmpty(file)) throw new ArgumentNullException(nameof(file));
         file = file.Trim();
-        if (file.StartsWith("\"") && file.EndsWith("\"")){
-            file = file.Substring(1, file.Length - 2);
+        if (file.StartsWith("\"") && file.EndsWith("\""))
+        {
+            file = file[1..^1];
         }
+        file = FileExtensions.GetCanonicalPath(file);
         if (!File.Exists(file))
         {
             if (Javas.ContainsKey(file)) Javas.Remove(file);

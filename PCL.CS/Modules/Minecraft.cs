@@ -15,14 +15,24 @@ namespace PCL.CS.Modules
         public static readonly string LocalPath = Path.Combine(Base.Path, ".minecraft");
         public static readonly List<McGroup> McGroups = new();
         public static McGroup SelectedGroup;
+        public static Mc SelectedInstance;
         public static bool IsSelectedGroupCorrect => SelectedGroup is null || McGroups.Contains(SelectedGroup);
         public static event EventHandler<McGroup> OnSelectGroupChanged;
+        public static event EventHandler<Mc> OnSelectInstanceChanged;
         public static void SelectMcGroup(McGroup mcGroup)
         {
             if (mcGroup is not null && !McGroups.Contains(mcGroup)) throw new ArgumentException($"{mcGroup.Name}必须存在于游戏列表里！");
             if (SelectedGroup == mcGroup) return;
             SelectedGroup = mcGroup;
             OnSelectGroupChanged?.Invoke(null, mcGroup);
+            if (mcGroup.Minecrafts.Count > 0) SelectInstance(mcGroup.Minecrafts[0]);
+            else SelectInstance(null);
+        }
+        public static void SelectInstance(Mc Minecraft)
+        {
+            if (SelectedInstance == Minecraft) return;
+            SelectedInstance = Minecraft;
+            OnSelectInstanceChanged?.Invoke(null, Minecraft);
         }
         public static void Init()
         {
@@ -35,6 +45,7 @@ namespace PCL.CS.Modules
             }
             if (McGroups.Count > 0) SelectMcGroup(McGroups[0]);
             Save();
+            Mc.DefaultDownloader = Net.NetDownloader;
         }
         public static void Save()
         {

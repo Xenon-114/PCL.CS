@@ -15,20 +15,6 @@ namespace XeF4Core;
 /// </summary>
 public static class Extensions
 {
-    /// <summary>
-    /// 异步形式的File.WriteAllBytes
-    /// </summary>
-    /// <param name="path">指定路径</param>
-    /// <param name="bytes">字节数组</param>
-    /// <param name="cancellationToken">取消令牌</param>
-    /// <returns></returns>
-    public static async Task WriteAllBytesToFileAsync(string path ,byte[] bytes, CancellationToken cancellationToken = default)
-    {
-        var fileOptions = FileOptions.Asynchronous | FileOptions.SequentialScan;
-        using var fileStream = new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.None, 81920, fileOptions);
-        await fileStream.WriteAsync(bytes, 0, bytes.Length, cancellationToken);
-        await fileStream.FlushAsync(cancellationToken);
-    }
     #region SHA256
     /// <summary>
     /// 获得字符串的Sha256哈希
@@ -134,20 +120,6 @@ public static class Extensions
         return (char)(nibble < 10 ? nibble + '0' : nibble - 10 + 'a');
     }
     /// <summary>
-    /// 反序列化Json
-    /// </summary>
-    /// <typeparam name="T"></typeparam>
-    /// <param name="stream"></param>
-    /// <returns></returns>
-    public static T? DeserializeJson<T>(Stream stream)
-    {
-        using var sr = new StreamReader(stream);
-        using var jsonTextReader = new JsonTextReader(sr);
-
-        var serializer = new JsonSerializer();
-        return serializer.Deserialize<T>(jsonTextReader);
-    }
-    /// <summary>
     /// 判断一个数组是不是空的
     /// </summary>
     /// <typeparam name="T">数组储存的类型</typeparam>
@@ -230,7 +202,7 @@ public static class Extensions
 /// <summary>
 /// 表示一个版本号
 /// </summary>
-public readonly struct VersionCode: IComparable<VersionCode>, IComparable, IEquatable<VersionCode>
+public readonly struct VersionCode : IComparable<VersionCode>, IComparable, IEquatable<VersionCode>
 {
     /// <summary>
     /// 主版本号
@@ -431,7 +403,7 @@ public readonly struct VersionCode: IComparable<VersionCode>, IComparable, IEqua
         if (obj is null) return 1;
         if (obj is VersionCode other) return CompareTo(other);
         throw new ArgumentException($"Object must be of type {nameof(VersionCode)}");
-        
+
     }
 }
 
@@ -521,7 +493,12 @@ public enum OSPlatform
     /// MacOS
     /// </summary>
     [JsonProperty("macos")]
-    MacOS = 2
+    MacOS = 2,
+    /// <summary>
+    /// 任意
+    /// </summary>
+    [JsonProperty("universal")]
+    Universal = 3 // 或者也可以映射到 Windows 或 null，但最好加上
 }
 /// <summary>
 /// 标识程序架构

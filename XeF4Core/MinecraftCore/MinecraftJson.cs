@@ -132,6 +132,12 @@ public class Arguments
     /// </summary>
     [JsonProperty("jvm")]
     public List<JToken> JvmArgs { get; set; } = [];
+    /// <summary>
+    /// 获取或设置 JVM 参数列表（传递给 Java 虚拟机的参数）。
+    /// 每个元素可以是 string 或包含 rules 和 value 的 JObject。
+    /// </summary>
+    [JsonProperty("default-user-jvm")]
+    public List<JToken> DefaultUserJvm { get; set; } = [];
 }
 
 /// <summary>

@@ -40,7 +40,7 @@ namespace PCL.CS.Modules
                 if (File.Exists(ConfigPath))
                 {
                     using var FileSteam = File.OpenRead(ConfigPath);
-                    _Current = XeF4Core.Extensions.DeserializeJson<Config>(FileSteam) ?? new Config();
+                    _Current = XeF4Core.JsonExtensions.DeserializeJson<Config>(FileSteam) ?? new Config();
                 }
                 else _Current = new Config();
         }

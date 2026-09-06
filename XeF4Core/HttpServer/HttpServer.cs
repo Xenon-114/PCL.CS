@@ -53,7 +53,7 @@ public static class HttpServer
             try
             {
                 byte[] bytes = await HttpServerCore.SendRequest(url, HttpMethod.Get, simulateBrowserHeaders: true);
-                await Extensions.WriteAllBytesToFileAsync(localPath,bytes);
+                await FileExtensions.WriteAllBytesToFileAsync(localPath,bytes);
                 return;
             }
             catch (ThreadInterruptedException)

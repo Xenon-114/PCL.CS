@@ -250,7 +250,13 @@ public partial class MinecraftRunner
     /// </summary>
     /// <returns></returns>
     /// <exception cref="JsonException"></exception>
-    public IMyTaskList FileChecks()
+    public IMyTaskList FileChecks() => FileChecks(MinecraftDownloader);
+    /// <summary>
+    /// 进行文件校验补全
+    /// </summary>
+    /// <returns></returns>
+    /// <exception cref="JsonException"></exception>
+    public IMyTaskList FileChecks(Downloader downloader)
     {
         Dictionary<string, bool> Features = new();
         foreach (var i in Extras)
@@ -267,7 +273,7 @@ public partial class MinecraftRunner
             if (!minecraft.CorePath.Exists || Minecraft.ComputeFileSha1(minecraft.CorePath) != Sha1)
             {
                 minecraft.CorePath.Delete();
-                var dltsk = MinecraftDownloader.Download(url, minecraft.CorePath.FullName);
+                var dltsk = downloader.Download(url, minecraft.CorePath.FullName);
                 Core.Log($"开始下载游戏本体：{url} => {minecraft.CorePath.FullName}");
                 myTaskList.Children.Add(dltsk);
             }
@@ -283,7 +289,7 @@ public partial class MinecraftRunner
             if (!minecraft.CorePath.Exists || Minecraft.ComputeFileSha1(minecraft.CorePath) != Sha1)
             {
                 minecraft.CorePath.Delete();
-                var dltsk = MinecraftDownloader.Download(url, minecraft.CorePath.FullName);
+                var dltsk = downloader.Download(url, minecraft.CorePath.FullName);
                 Core.Log($"开始下载游戏本体：{url} => {minecraft.CorePath.FullName}");
                 tasks.downloads.Add(dltsk);
             }
@@ -327,7 +333,7 @@ public partial class MinecraftRunner
                 //不给我下就跳过
                 if (lib.Downloads?.Artifact?.Url is not null)
                 {
-                    var dltsk = MinecraftDownloader.Download(lib.Downloads.Artifact.Url, LocalPath);
+                    var dltsk = downloader.Download(lib.Downloads.Artifact.Url, LocalPath);
                     tasks.downloads.Add(dltsk);
                 }
             }
@@ -335,7 +341,7 @@ public partial class MinecraftRunner
         myTaskList.Children.Add(tasks);
         #endregion
         #region 资源文件检查
-        myTaskList.Children.Add(minecraft.AssetsChecks());
+        myTaskList.Children.Add(minecraft.AssetsChecks(downloader));
         #endregion
         return myTaskList;
     }
@@ -365,7 +371,7 @@ public partial class MinecraftRunner
                 if (!IsEnable) continue;
             }
             string LocalPath = Minecraft.GetLocalLibraryPath(lib, minecraft.PublicPath.FullName);
-            if (lib.Natives.Count != 0 || (lib.Name?.Contains(":natives-") ?? false))
+            if (IsNativeLib(lib))
             {
                 Core.Log($"解压本地库{lib.Name}");
                 if (!File.Exists(LocalPath)) continue;
@@ -373,6 +379,7 @@ public partial class MinecraftRunner
             }
         }
     }
+    private static bool IsNativeLib(Library lib) => lib.Natives.Count != 0 || (lib.Name?.Contains(":natives-") ?? false);
 
     /// <summary>
     /// 当游戏输出日志时触发
@@ -417,7 +424,7 @@ public partial class MinecraftRunner
                 foreach (Rule Rule in lib.Rules)
                     if (!(IsEnable &= IsRulesEnable(Rule, Features))) break;
             if (!IsEnable) continue;
-            if (IsEnable)
+            if (IsEnable && !IsNativeLib(lib))
             {
                 string LocalPath = Minecraft.GetLocalLibraryPath(lib, minecraft.PublicPath.FullName);
                 StartLibrarys.Add(LocalPath);
@@ -439,7 +446,7 @@ public partial class MinecraftRunner
             { "game_directory", minecraft.PrivatePath.FullName },
             { "assets_root", Path.Combine(minecraft.PublicPath.FullName, "assets") },
             { "assets_index_name", Jsons.AssetIndex?.Id ?? "" },
-            { "natives_directory", NativeDir },
+            { "natives_directory", $"\"{NativeDir}\"" },
             { "launcher_name", Core.LauncherName },
             { "launcher_version", "1.0.0.0" },
             { "version_name", Jsons.Id ?? Jsons.ClientVersion ?? "Unknown" }
@@ -538,6 +545,7 @@ public partial class MinecraftRunner
         MinecraftProcess = GameJava.RunProcessWithMainClass(JvmArgsArray, null, Jsons.MainClass, GameArgsArray);
         MinecraftProcess.OutputDataReceived += (s, e) => OutputDataReceived?.Invoke(s, e.Data);
         MinecraftProcess.ErrorDataReceived += (s, e) => ErrorDataReceived?.Invoke(s, e.Data);
+        MinecraftProcess.EnableRaisingEvents = true;
         MinecraftProcess.BeginOutputReadLine();
         MinecraftProcess.BeginErrorReadLine();
         MinecraftProcess.Exited += (s, e) =>
@@ -546,7 +554,8 @@ public partial class MinecraftRunner
             MinecraftProcess.Dispose();
             MinecraftProcess = null;
             Complete.TrySetResult(null);
-            Directory.Delete(NativeDir, true);
+            //Directory.Delete(NativeDir, true);
+            CleanUp();
         };
     }
     /// <summary>
@@ -554,7 +563,8 @@ public partial class MinecraftRunner
     /// </summary>
     public void CleanUp()
     {
-        Directory.Delete(NativeDir, true);
+        if (Directory.Exists(NativeDir))
+            Directory.Delete(NativeDir, true);
     }
     private TaskCompletionSource<object?> Complete = new();
     private Process? MinecraftProcess;
@@ -611,7 +621,8 @@ public partial class MinecraftRunner
             string ext = Path.GetExtension(fileName).ToLower();
             if (ext != ".dll" && ext != ".so" && ext != ".dylib" && ext != ".jnilib")
                 continue; // 跳过非动态库文件
-            string destPath = Path.Combine(outputDir, fileName);
+            string destPath = Path.Combine(outputDir, entry.FullName);
+            Directory.CreateDirectory(Path.GetDirectoryName(destPath));
             entry.ExtractToFile(destPath, overwrite: true);
             //Console.WriteLine($"解压{jarPath}内的{fileName}，输出至{destPath}");
         }
@@ -645,6 +656,6 @@ public partial class MinecraftRunner
     private static MinecraftJsonInfomation LoadMinecraftVersion(FileInfo path)
     {
         using FileStream file = path.OpenRead();
-        return Extensions.DeserializeJson<MinecraftJsonInfomation>(file) ?? throw new JsonException("加载Json失败");
+        return JsonExtensions.DeserializeJson<MinecraftJsonInfomation>(file) ?? throw new JsonException("加载Json失败");
     }
 }

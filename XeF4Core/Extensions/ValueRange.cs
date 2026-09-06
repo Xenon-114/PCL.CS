@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Text;
 
 namespace XeF4Core;
 
@@ -50,15 +49,15 @@ public readonly struct ValueRange<T> : IEquatable<ValueRange<T>?> where T : ICom
     /// <summary> 创建区间 (<paramref name="left"/>,<paramref name="right"/>] </summary>
     public static ValueRange<T> OpenClosed(T left, T right) => new(left, right, false, true);
     /// <summary> 创建区间 (<paramref name="value"/>,<paramref name="value"/>] </summary>
-    public static ValueRange<T> Exactly(T value) => new(value, value,  true, true);
+    public static ValueRange<T> Exactly(T value) => new(value, value, true, true);
     /// <summary> 创建区间 [<paramref name="lower"/>,Infinity) </summary>
     public static ValueRange<T> AtLeast(T lower) => new(lower, default, true, false);
     /// <summary> 创建区间 (<paramref name="lower"/>,Infinity) </summary>
-    public static ValueRange<T> GreaterThan(T lower) => new(lower, default,  false, false);
+    public static ValueRange<T> GreaterThan(T lower) => new(lower, default, false, false);
     /// <summary> 创建区间 (-Infinity,<paramref name="upper"/>] </summary>
     public static ValueRange<T> AtMost(T upper) => new(default, upper, false, true);
     /// <summary> 创建区间 (-Infinity,<paramref name="upper"/>) </summary>
-    public static ValueRange<T> LessThan(T upper) => new(default, upper,  false, false);
+    public static ValueRange<T> LessThan(T upper) => new(default, upper, false, false);
     /// <summary> 创建区间 (-Infinity,Infinity) </summary>
     public static ValueRange<T> All() => new(default, default, false, false);
 #pragma warning disable CS1591 // 缺少对公共可见类型或成员的 XML 注释
@@ -67,7 +66,7 @@ public readonly struct ValueRange<T> : IEquatable<ValueRange<T>?> where T : ICom
         /// <summary>
         /// 创建闭区间 [<paramref name="lower"/>,<paramref name="upper"/>]
         /// </summary>
-        public ValueRange<T> this[T lower,T upper]
+        public ValueRange<T> this[T lower, T upper]
         {
             get => new(lower, upper, true, true);
         }
@@ -109,14 +108,15 @@ public readonly struct ValueRange<T> : IEquatable<ValueRange<T>?> where T : ICom
     /// <param name="Parser">用于转换的转换器对象</param>
     /// <returns>指定实例</returns>
     /// <exception cref="FormatException"></exception>
-    public static ValueRange<T> FromString(string s,Func<string,T>? Parser)
+    public static ValueRange<T> FromString(string s, Func<string, T>? Parser)
     {
-        s = s.Trim(' ','"', '\'', '“', '”', '‘', '’');
+        s = s.Trim(' ', '"', '\'', '“', '”', '‘', '’');
         bool isLowerSealed = s[0] is '[';
         bool isUpperSealed = s[^1] is ']';
         if (!isLowerSealed && s[0] is not '(') throw new FormatException("格式错误：字符串必须以[或(开头");
         if (!isUpperSealed && s[^1] is not ')') throw new FormatException("格式错误：字符串必须以]或)结尾");
         int point = s.IndexOfAny(',', '，');
+        if(point is -1)throw new FormatException("缺少','");
         string LowerStr = s[1..point].Trim();
         string UpperStr = s[(point + 1)..^2].Trim();
         T? Lower;
@@ -128,7 +128,7 @@ public readonly struct ValueRange<T> : IEquatable<ValueRange<T>?> where T : ICom
         }
         else
             Lower = Parser is not null ? Parser(LowerStr) : (T)Convert.ChangeType(LowerStr, typeof(T));
-        if (UpperStr == "" ||UpperStr == "∞" || UpperStr == "+∞" || UpperStr == "Infinity"|| UpperStr == "+Infinity")
+        if (UpperStr == "" || UpperStr == "∞" || UpperStr == "+∞" || UpperStr == "Infinity" || UpperStr == "+Infinity")
         {
             Upper = default;
             isUpperSealed = false;
@@ -145,13 +145,13 @@ public readonly struct ValueRange<T> : IEquatable<ValueRange<T>?> where T : ICom
     /// <returns></returns>
     public bool Contains(T value)
     {
-        if(Lower is not null)
+        if (Lower is not null)
         {
             int cmp = value.CompareTo(Lower);
             if (cmp < 0) return false;
             if (cmp == 0 && !IsLowerSealed) return false;
         }
-        if(Upper is not null)
+        if (Upper is not null)
         {
             int cmp = value.CompareTo(Upper);
             if (cmp > 0) return false;
@@ -221,12 +221,12 @@ public readonly struct ValueRange<T> : IEquatable<ValueRange<T>?> where T : ICom
     /// <inheritdoc/>
     public override int GetHashCode()
     {
-        int hashCode = 169504101;
-        hashCode = hashCode * -1521134295 + EqualityComparer<T?>.Default.GetHashCode(Lower);
-        hashCode = hashCode * -1521134295 + EqualityComparer<T?>.Default.GetHashCode(Upper);
-        hashCode = hashCode * -1521134295 + IsLowerSealed.GetHashCode();
-        hashCode = hashCode * -1521134295 + IsUpperSealed.GetHashCode();
-        return hashCode;
+        var hashCode = new HashCode();
+        hashCode.Add(Lower, EqualityComparer<T?>.Default);
+        hashCode.Add(Upper, EqualityComparer<T?>.Default);
+        hashCode.Add(IsLowerSealed);
+        hashCode.Add(IsUpperSealed);
+        return hashCode.ToHashCode();
     }
     /// <inheritdoc/>
     public static bool operator ==(ValueRange<T>? left, ValueRange<T>? right) => EqualityComparer<ValueRange<T>?>.Default.Equals(left, right);

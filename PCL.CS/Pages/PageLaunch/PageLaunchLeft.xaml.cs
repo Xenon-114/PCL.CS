@@ -27,6 +27,8 @@ namespace PCL.CS.Pages
         public PageLaunchLeft()
         {
             InitializeComponent();
+            Minecraft.OnSelectInstanceChanged += (s, e) => Refresh();
+            Refresh();
         }
         public override AnimationGroup AnimationIn()
         {
@@ -47,17 +49,80 @@ namespace PCL.CS.Pages
         public override void Reset()
         {
             this.Opacity = 0;
+            Refresh();
         }
-        private async void BtnVersion_Click(object sender, RoutedEventArgs e)
+        private void Refresh()
+        {
+            if (Minecraft.SelectedInstance is null)
+            {
+                TextLaunch.Text = "下载游戏";
+                TextVersion.Text = "没有可用版本";
+            }
+            else
+            {
+                TextLaunch.Text = "启动游戏";
+                TextVersion.Text = Minecraft.SelectedInstance.VersionName;
+            }
+        }
+        private void BtnVersion_Click(object sender, RoutedEventArgs e)
         {
             PagesContent.ChangePage(5);
         }
 
-
-
-        private async void BtnLaunch_Click(object sender, RoutedEventArgs e)
+        private void BtnLaunch_Click(object sender, RoutedEventArgs e)
         {
-            Main.Hint("aaa");
+            if (Minecraft.SelectedInstance is null)
+                PagesContent.ChangePage(1);
+            else
+                LaunchMinecraft();
+        }
+        private class AddOn : XeF4Core.MinecraftCore.IMinecraftRunnerExtra
+        {
+            KeyValuePair<string, string>[] XeF4Core.MinecraftCore.IMinecraftRunnerExtra.MacroReplacement => null;
+            KeyValuePair<string, bool>[] XeF4Core.MinecraftCore.IMinecraftRunnerExtra.Features => null;
+            string[] XeF4Core.MinecraftCore.IMinecraftRunnerExtra.GameArgsAdd => null;
+            string[] XeF4Core.MinecraftCore.IMinecraftRunnerExtra.JvmArgsAdd { get; } = { "-Dorg.lwjgl.util.Debug=true", "-Dorg.lwjgl.util.DebugLoader=true" };
+        }
+        private async void LaunchMinecraft()
+        {
+            BtnLaunch.IsEnabled = false;
+            try
+            {
+                string PlayerName = PlayerNameBox.Text;
+                await Task.Run(async () =>
+                {
+                    var Runner = Minecraft.SelectedInstance.CreateRunner();
+                    Runner.Login(PlayerName, new Guid(PlayerName.GetMd5Hash()).ToString(), "0", "legacy", "0");
+                    await Runner.FileChecks();
+                    Runner.PrepairNativeLibs();
+                    Runner.GameJava = java;
+                    Runner.Extras.Add(new AddOn());
+                    Runner.OutputDataReceived += (s, e) => Main.Hint(e);
+                    Runner.ErrorDataReceived += (s, e) => Main.Hint(e);
+                    Runner.Start();
+                    await Runner.WaitForExitAsync();
+                    //Runner.CleanUp();
+                });
+            }
+            finally
+            {
+                Main.Hint("游戏已退出......");
+                BtnLaunch.IsEnabled = true;
+            }
+        }
+        private Java java;
+
+        private async void JavaButton_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                java = await Java.FromFile(JavaBox.Text);
+                Main.Hint("Java已使用！");
+            }
+            catch (Exception ex)
+            {
+                Main.Hint(ex.ToString());
+            }
         }
     }
 }

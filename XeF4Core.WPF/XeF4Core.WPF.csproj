@@ -10,4 +10,8 @@
     <Configurations>Debug;Release</Configurations>
   </PropertyGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="..\XeF4Core\XeF4Core.csproj" />
+  </ItemGroup>
+
 </Project>

@@ -80,24 +80,29 @@ public class MinecraftGroup : IDisposable,IEnumerable<Minecraft>,IEnumerable
         MinecraftDirectory.Delete(true);
         Dispose();
     }
-    private MinecraftGroup(DirectoryInfo directory)
+    private MinecraftGroup(DirectoryInfo directory,string fullPath)
     {
-        MinecraftMaps[directory.FullName] = this;
+        MinecraftMaps[fullPath] = this;
         MinecraftDirectory = directory;
         var DirVersion = new DirectoryInfo(Path.Combine(directory.FullName, "versions"));
         if (DirVersion.Exists)
         {
             foreach (var dir in DirVersion.EnumerateDirectories())
             {
+                Core.Log($"扫描{dir.FullName}");
                 string JsonName = dir.Name;
                 string JsonPath = Path.Combine(dir.FullName, JsonName + ".json");
                 try
                 {
+                    Core.Log($"尝试从{JsonPath}创建......");
                     Minecraft Mc = Minecraft.FromJsonPath(JsonPath);
                     Mc.PublicPath = directory;
                     minecrafts.Add(Mc);
                 }
-                catch { }
+                catch(Exception ex)
+                {
+                    Core.Log($"出现错误：\n{ex.ToString()}");
+                }
             }
         }
     }
@@ -109,7 +114,9 @@ public class MinecraftGroup : IDisposable,IEnumerable<Minecraft>,IEnumerable
     /// <returns></returns>
     public static MinecraftGroup FromMinecraftPath(string Path)
     {
+        Core.Log($"尝试从{Path}创建...");
         Path = Path.Trim(' ', '\"');
+        Path = FileExtensions.GetCanonicalPath(Path);
         if (MinecraftMaps.TryGetValue(Path, out var minecraftGroup))
         {
             if (!minecraftGroup.IsAvailable)
@@ -121,7 +128,7 @@ public class MinecraftGroup : IDisposable,IEnumerable<Minecraft>,IEnumerable
         }
         DirectoryInfo directory = new(Path);
         if (!directory.Exists) throw new DirectoryNotFoundException($"没有找到位于{Path}处的.minecraft文件夹");
-        return new MinecraftGroup(directory);
+        return new MinecraftGroup(directory,Path);
     }
     /// <summary>
     /// 删除该文件夹

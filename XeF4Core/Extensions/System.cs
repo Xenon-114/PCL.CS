@@ -8,6 +8,7 @@ using System.Text;
 namespace System;
 
 
+#region Index
 /// <summary>表示一个可以从开头或末尾访问的索引</summary>
 public readonly struct Index : IEquatable<Index>
 {
@@ -182,154 +183,576 @@ public readonly struct Index : IEquatable<Index>
     private readonly int _value;
 }
 
+#endregion
+
+#region HashCode
+
+
+#pragma warning disable CA1066 // Implement IEquatable when overriding Object.Equals
+
+
+
 /// <summary>
-/// 提供高版本HashCode中的部分函数
+/// 对于对象哈希值的基本操作
 /// </summary>
 public struct HashCode
 {
-    private static readonly uint s_seed = 0x9e3779b9; // 常用黄金比例常数
-    /// <summary>组合 2 个值的哈希。</summary>
+    private static readonly uint s_seed = GenerateGlobalSeed();
+
+    private const uint Prime1 = 2654435761U;
+    private const uint Prime2 = 2246822519U;
+    private const uint Prime3 = 3266489917U;
+    private const uint Prime4 = 668265263U;
+    private const uint Prime5 = 374761393U;
+
+    private uint _v1, _v2, _v3, _v4;
+    private uint _queue1, _queue2, _queue3;
+    private uint _length;
+
+    private static unsafe uint GenerateGlobalSeed()
+    {
+        using var rng = System.Security.Cryptography.RandomNumberGenerator.Create();
+        byte[] bytes = new byte[sizeof(uint)];
+        rng.GetBytes(bytes);
+        return BitConverter.ToUInt32(bytes, 0);
+    }
+    /// <summary>
+    /// 获取一个对象的哈希值
+    /// </summary>
+    /// <typeparam name="T1">对象的类型</typeparam>
+    /// <param name="value1">对象</param>
+    /// <returns>哈希值</returns>
+    public static int Combine<T1>(T1 value1)
+    {
+        // Provide a way of diffusing bits from something with a limited
+        // input hash space. For example, many enums only have a few
+        // possible hashes, only using the bottom few bits of the code. Some
+        // collections are built on the assumption that hashes are spread
+        // over a larger space, so diffusing the bits may help the
+        // collection work more efficiently.
+
+        uint hc1 = (uint)(value1?.GetHashCode() ?? 0);
+
+        uint hash = MixEmptyState();
+        hash += 4;
+
+        hash = QueueRound(hash, hc1);
+
+        hash = MixFinal(hash);
+        return (int)hash;
+    }
+    /// <summary>
+    /// 组合两个对象的哈希值
+    /// </summary>
+    /// <typeparam name="T1">第一个对象的类型</typeparam>
+    /// <typeparam name="T2">第二个对象的类型</typeparam>
+    /// <param name="value1">第一个对象</param>
+    /// <param name="value2">第二个对象</param>
+    /// <returns>哈希值</returns>
     public static int Combine<T1, T2>(T1 value1, T2 value2)
     {
-        uint h1 = (uint)(value1?.GetHashCode() ?? 0);
-        uint h2 = (uint)(value2?.GetHashCode() ?? 0);
+        uint hc1 = (uint)(value1?.GetHashCode() ?? 0);
+        uint hc2 = (uint)(value2?.GetHashCode() ?? 0);
 
-        uint hash = MixEmptyState() + 8U;
-        hash = QueueRound(hash, h1);
-        hash = QueueRound(hash, h2);
-        return (int)MixFinal(hash);
+        uint hash = MixEmptyState();
+        hash += 8;
+
+        hash = QueueRound(hash, hc1);
+        hash = QueueRound(hash, hc2);
+
+        hash = MixFinal(hash);
+        return (int)hash;
     }
-
-    /// <summary>组合 3 个值的哈希。</summary>
+    /// <summary>
+    /// 组合三个对象的哈希值
+    /// </summary>
+    /// <typeparam name="T1">第一个对象的类型</typeparam>
+    /// <typeparam name="T2">第二个对象的类型</typeparam>
+    /// <typeparam name="T3">第三个对象的类型</typeparam>
+    /// <param name="value1">第一个对象</param>
+    /// <param name="value2">第二个对象</param>
+    /// <param name="value3">第三个对象</param>
+    /// <returns>哈希值</returns>
     public static int Combine<T1, T2, T3>(T1 value1, T2 value2, T3 value3)
     {
-        uint h1 = (uint)(value1?.GetHashCode() ?? 0);
-        uint h2 = (uint)(value2?.GetHashCode() ?? 0);
-        uint h3 = (uint)(value3?.GetHashCode() ?? 0);
+        uint hc1 = (uint)(value1?.GetHashCode() ?? 0);
+        uint hc2 = (uint)(value2?.GetHashCode() ?? 0);
+        uint hc3 = (uint)(value3?.GetHashCode() ?? 0);
 
-        uint hash = MixEmptyState() + 12U;
-        hash = QueueRound(hash, h1);
-        hash = QueueRound(hash, h2);
-        hash = QueueRound(hash, h3);
-        return (int)MixFinal(hash);
+        uint hash = MixEmptyState();
+        hash += 12;
+
+        hash = QueueRound(hash, hc1);
+        hash = QueueRound(hash, hc2);
+        hash = QueueRound(hash, hc3);
+
+        hash = MixFinal(hash);
+        return (int)hash;
     }
-
-    /// <summary>组合 4 个值的哈希（使用四状态机，与官方完全一致）。</summary>
+    /// <summary>
+    /// 组合四个对象的哈希值
+    /// </summary>
+    /// <typeparam name="T1">第一个对象的类型</typeparam>
+    /// <typeparam name="T2">第二个对象的类型</typeparam>
+    /// <typeparam name="T3">第三个对象的类型</typeparam>
+    /// <typeparam name="T4">第四个对象的类型</typeparam>
+    /// <param name="value1">第一个对象</param>
+    /// <param name="value2">第二个对象</param>
+    /// <param name="value3">第三个对象</param>
+    /// <param name="value4">第四个对象</param>
+    /// <returns></returns>
     public static int Combine<T1, T2, T3, T4>(T1 value1, T2 value2, T3 value3, T4 value4)
     {
-        uint h1 = (uint)(value1?.GetHashCode() ?? 0);
-        uint h2 = (uint)(value2?.GetHashCode() ?? 0);
-        uint h3 = (uint)(value3?.GetHashCode() ?? 0);
-        uint h4 = (uint)(value4?.GetHashCode() ?? 0);
+        uint hc1 = (uint)(value1?.GetHashCode() ?? 0);
+        uint hc2 = (uint)(value2?.GetHashCode() ?? 0);
+        uint hc3 = (uint)(value3?.GetHashCode() ?? 0);
+        uint hc4 = (uint)(value4?.GetHashCode() ?? 0);
 
         Initialize(out uint v1, out uint v2, out uint v3, out uint v4);
-        v1 = Round(v1, h1);
-        v2 = Round(v2, h2);
-        v3 = Round(v3, h3);
-        v4 = Round(v4, h4);
 
-        uint hash = MixState(v1, v2, v3, v4) + 16U;
-        return (int)MixFinal(hash);
+        v1 = Round(v1, hc1);
+        v2 = Round(v2, hc2);
+        v3 = Round(v3, hc3);
+        v4 = Round(v4, hc4);
+
+        uint hash = MixState(v1, v2, v3, v4);
+        hash += 16;
+
+        hash = MixFinal(hash);
+        return (int)hash;
     }
-
     /// <summary>
-    /// 组合任意多个对象的哈希（params 版本）。
-    /// 内部通过创建 HashCode 实例，循环 Add 后 ToHashCode 实现。
-    /// 注意：此方法会装箱，仅用于参数数量不确定的场景。
+    /// 组合五个对象的哈希值
     /// </summary>
-    public static int Combine(params object?[] values)
+    /// <typeparam name="T1">第一个对象的类型</typeparam>
+    /// <typeparam name="T2">第二个对象的类型</typeparam>
+    /// <typeparam name="T3">第三个对象的类型</typeparam>
+    /// <typeparam name="T4">第四个对象的类型</typeparam>
+    /// <typeparam name="T5">第五个对象的类型</typeparam>
+    /// <param name="value1">第一个对象</param>
+    /// <param name="value2">第二个对象</param>
+    /// <param name="value3">第三个对象</param>
+    /// <param name="value4">第四个对象</param>
+    /// <param name="value5">第五个对象</param>
+    /// <returns>哈希值</returns>
+    public static int Combine<T1, T2, T3, T4, T5>(T1 value1, T2 value2, T3 value3, T4 value4, T5 value5)
     {
-        if (values == null || values.Length == 0)
-            return 0;
+        uint hc1 = (uint)(value1?.GetHashCode() ?? 0);
+        uint hc2 = (uint)(value2?.GetHashCode() ?? 0);
+        uint hc3 = (uint)(value3?.GetHashCode() ?? 0);
+        uint hc4 = (uint)(value4?.GetHashCode() ?? 0);
+        uint hc5 = (uint)(value5?.GetHashCode() ?? 0);
 
-        // 为了保持与官方增量逻辑一致，我们使用实例方式模拟
-        // 但为了简化，直接调用泛型重载（最多4个）会损失灵活性，故用 Add+ToHashCode 复制官方增量逻辑
-        // 我们直接实现一个轻量循环混合（与官方 Add 逻辑等价）
-        uint length = (uint)values.Length;
-        uint v1, v2, v3, v4;
-        Initialize(out v1, out v2, out v3, out v4);
+        Initialize(out uint v1, out uint v2, out uint v3, out uint v4);
 
-        uint queue1 = 0, queue2 = 0, queue3 = 0;
-        uint queueCount = 0;
+        v1 = Round(v1, hc1);
+        v2 = Round(v2, hc2);
+        v3 = Round(v3, hc3);
+        v4 = Round(v4, hc4);
 
-        for (int i = 0; i < values.Length; i++)
-        {
-            uint h = (uint)(values[i]?.GetHashCode() ?? 0);
-            switch (queueCount)
-            {
-                case 0: queue1 = h; queueCount = 1; break;
-                case 1: queue2 = h; queueCount = 2; break;
-                case 2: queue3 = h; queueCount = 3; break;
-                case 3:
-                    v1 = Round(v1, queue1);
-                    v2 = Round(v2, queue2);
-                    v3 = Round(v3, queue3);
-                    v4 = Round(v4, h);
-                    queueCount = 0;
-                    break;
-            }
-        }
+        uint hash = MixState(v1, v2, v3, v4);
+        hash += 20;
 
-        uint hash = MixState(v1, v2, v3, v4) + length * 4U;
+        hash = QueueRound(hash, hc5);
 
-        if (queueCount > 0)
-        {
-            hash = QueueRound(hash, queue1);
-            if (queueCount > 1)
-            {
-                hash = QueueRound(hash, queue2);
-                if (queueCount > 2)
-                    hash = QueueRound(hash, queue3);
-            }
-        }
-
-        return (int)MixFinal(hash);
+        hash = MixFinal(hash);
+        return (int)hash;
     }
+    /// <summary>
+    /// 组合六个对象的哈希值
+    /// </summary>
+    /// <typeparam name="T1">第一个对象的类型</typeparam>
+    /// <typeparam name="T2">第二个对象的类型</typeparam>
+    /// <typeparam name="T3">第三个对象的类型</typeparam>
+    /// <typeparam name="T4">第四个对象的类型</typeparam>
+    /// <typeparam name="T5">第五个对象的类型</typeparam>
+    /// <typeparam name="T6">第六个对象的类型</typeparam>
+    /// <param name="value1">第一个对象</param>
+    /// <param name="value2">第二个对象</param>
+    /// <param name="value3">第三个对象</param>
+    /// <param name="value4">第四个对象</param>
+    /// <param name="value5">第五个对象</param>
+    /// <param name="value6">第六个对象</param>
+    /// <returns>哈希值</returns>
+    public static int Combine<T1, T2, T3, T4, T5, T6>(T1 value1, T2 value2, T3 value3, T4 value4, T5 value5, T6 value6)
+    {
+        uint hc1 = (uint)(value1?.GetHashCode() ?? 0);
+        uint hc2 = (uint)(value2?.GetHashCode() ?? 0);
+        uint hc3 = (uint)(value3?.GetHashCode() ?? 0);
+        uint hc4 = (uint)(value4?.GetHashCode() ?? 0);
+        uint hc5 = (uint)(value5?.GetHashCode() ?? 0);
+        uint hc6 = (uint)(value6?.GetHashCode() ?? 0);
+
+        Initialize(out uint v1, out uint v2, out uint v3, out uint v4);
+
+        v1 = Round(v1, hc1);
+        v2 = Round(v2, hc2);
+        v3 = Round(v3, hc3);
+        v4 = Round(v4, hc4);
+
+        uint hash = MixState(v1, v2, v3, v4);
+        hash += 24;
+
+        hash = QueueRound(hash, hc5);
+        hash = QueueRound(hash, hc6);
+
+        hash = MixFinal(hash);
+        return (int)hash;
+    }
+    /// <summary>
+    /// 组合七个对象的哈希值
+    /// </summary>
+    /// <typeparam name="T1">第一个对象的类型</typeparam>
+    /// <typeparam name="T2">第二个对象的类型</typeparam>
+    /// <typeparam name="T3">第三个对象的类型</typeparam>
+    /// <typeparam name="T4">第四个对象的类型</typeparam>
+    /// <typeparam name="T5">第五个对象的类型</typeparam>
+    /// <typeparam name="T6">第六个对象的类型</typeparam>
+    /// <typeparam name="T7">第七个对象的类型</typeparam>
+    /// <param name="value1">第一个对象</param>
+    /// <param name="value2">第二个对象</param>
+    /// <param name="value3">第三个对象</param>
+    /// <param name="value4">第四个对象</param>
+    /// <param name="value5">第五个对象</param>
+    /// <param name="value6">第六个对象</param>
+    /// <param name="value7">第七个对象</param>
+    /// <returns>哈希值</returns>
+    public static int Combine<T1, T2, T3, T4, T5, T6, T7>(T1 value1, T2 value2, T3 value3, T4 value4, T5 value5, T6 value6, T7 value7)
+    {
+        uint hc1 = (uint)(value1?.GetHashCode() ?? 0);
+        uint hc2 = (uint)(value2?.GetHashCode() ?? 0);
+        uint hc3 = (uint)(value3?.GetHashCode() ?? 0);
+        uint hc4 = (uint)(value4?.GetHashCode() ?? 0);
+        uint hc5 = (uint)(value5?.GetHashCode() ?? 0);
+        uint hc6 = (uint)(value6?.GetHashCode() ?? 0);
+        uint hc7 = (uint)(value7?.GetHashCode() ?? 0);
+
+        Initialize(out uint v1, out uint v2, out uint v3, out uint v4);
+
+        v1 = Round(v1, hc1);
+        v2 = Round(v2, hc2);
+        v3 = Round(v3, hc3);
+        v4 = Round(v4, hc4);
+
+        uint hash = MixState(v1, v2, v3, v4);
+        hash += 28;
+
+        hash = QueueRound(hash, hc5);
+        hash = QueueRound(hash, hc6);
+        hash = QueueRound(hash, hc7);
+
+        hash = MixFinal(hash);
+        return (int)hash;
+    }
+    /// <summary>
+    /// 组合八个对象的哈希值
+    /// </summary>
+    /// <typeparam name="T1">第一个对象的类型</typeparam>
+    /// <typeparam name="T2">第二个对象的类型</typeparam>
+    /// <typeparam name="T3">第三个对象的类型</typeparam>
+    /// <typeparam name="T4">第四个对象的类型</typeparam>
+    /// <typeparam name="T5">第五个对象的类型</typeparam>
+    /// <typeparam name="T6">第六个对象的类型</typeparam>
+    /// <typeparam name="T7">第七个对象的类型</typeparam>
+    /// <typeparam name="T8">第八个对象的类型</typeparam>
+    /// <param name="value1">第一个对象</param>
+    /// <param name="value2">第二个对象</param>
+    /// <param name="value3">第三个对象</param>
+    /// <param name="value4">第四个对象</param>
+    /// <param name="value5">第五个对象</param>
+    /// <param name="value6">第六个对象</param>
+    /// <param name="value7">第七个对象</param>
+    /// <param name="value8">第八个对象</param>
+    /// <returns>哈希值</returns>
+    public static int Combine<T1, T2, T3, T4, T5, T6, T7, T8>(T1 value1, T2 value2, T3 value3, T4 value4, T5 value5, T6 value6, T7 value7, T8 value8)
+    {
+        uint hc1 = (uint)(value1?.GetHashCode() ?? 0);
+        uint hc2 = (uint)(value2?.GetHashCode() ?? 0);
+        uint hc3 = (uint)(value3?.GetHashCode() ?? 0);
+        uint hc4 = (uint)(value4?.GetHashCode() ?? 0);
+        uint hc5 = (uint)(value5?.GetHashCode() ?? 0);
+        uint hc6 = (uint)(value6?.GetHashCode() ?? 0);
+        uint hc7 = (uint)(value7?.GetHashCode() ?? 0);
+        uint hc8 = (uint)(value8?.GetHashCode() ?? 0);
+
+        Initialize(out uint v1, out uint v2, out uint v3, out uint v4);
+
+        v1 = Round(v1, hc1);
+        v2 = Round(v2, hc2);
+        v3 = Round(v3, hc3);
+        v4 = Round(v4, hc4);
+
+        v1 = Round(v1, hc5);
+        v2 = Round(v2, hc6);
+        v3 = Round(v3, hc7);
+        v4 = Round(v4, hc8);
+
+        uint hash = MixState(v1, v2, v3, v4);
+        hash += 32;
+
+        hash = MixFinal(hash);
+        return (int)hash;
+    }
+
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private static void Initialize(out uint v1, out uint v2, out uint v3, out uint v4)
     {
-        v1 = s_seed + 2654435761U + 2246822519U;
-        v2 = s_seed + 2246822519U;
+        v1 = s_seed + Prime1 + Prime2;
+        v2 = s_seed + Prime2;
         v3 = s_seed;
-        v4 = s_seed - 2654435761U;
+        v4 = s_seed - Prime1;
     }
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private static uint Round(uint hash, uint input)
-    {
-        return RotateLeft(hash + input * 2246822519U, 13) * 2654435761U;
-    }
-
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private static uint QueueRound(uint hash, uint queuedValue)
-    {
-        return RotateLeft(hash + queuedValue * 3266489917U, 17) * 668265263U;
-    }
-
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private static uint MixFinal(uint hash)
-    {
-        hash ^= hash >> 15;
-        hash *= 2246822519U;
-        hash ^= hash >> 13;
-        hash *= 3266489917U;
-        hash ^= hash >> 16;
-        return hash;
-    }
-    private static uint MixState(uint v1, uint v2, uint v3, uint v4)
-            => RotateLeft(v1, 1) + RotateLeft(v2, 7) + RotateLeft(v3, 12) + RotateLeft(v4, 18);
-
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private static uint MixEmptyState()
-        => s_seed + 374761393U;
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private static uint RotateLeft(uint value, int offset)
     {
         offset &= 31;
         return (value << offset) | (value >> (32 - offset));
     }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private static uint Round(uint hash, uint input)
+    {
+        return RotateLeft(hash + input * Prime2, 13) * Prime1;
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private static uint QueueRound(uint hash, uint queuedValue)
+    {
+        return RotateLeft(hash + queuedValue * Prime3, 17) * Prime4;
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private static uint MixState(uint v1, uint v2, uint v3, uint v4)
+    {
+        return RotateLeft(v1, 1) + RotateLeft(v2, 7) + RotateLeft(v3, 12) + RotateLeft(v4, 18);
+    }
+
+    private static uint MixEmptyState()
+    {
+        return s_seed + Prime5;
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private static uint MixFinal(uint hash)
+    {
+        hash ^= hash >> 15;
+        hash *= Prime2;
+        hash ^= hash >> 13;
+        hash *= Prime3;
+        hash ^= hash >> 16;
+        return hash;
+    }
+    /// <summary>
+    /// 向HashCode中添加一个对象
+    /// </summary>
+    /// <typeparam name="T">对象类型</typeparam>
+    /// <param name="value">对象</param>
+    public void Add<T>(T value)
+    {
+        Add(value?.GetHashCode() ?? 0);
+    }
+    /// <summary>
+    /// 向HashCode中添加一个对象
+    /// </summary>
+    /// <typeparam name="T">对象类型</typeparam>
+    /// <param name="value">对象</param>
+    /// <param name="comparer">自定义哈希算法</param>
+    public void Add<T>(T value, IEqualityComparer<T>? comparer)
+    {
+        Add(value is null ? 0 : (comparer?.GetHashCode(value) ?? value.GetHashCode()));
+    }
+
+    /// <summary>向HashCode中添加一段字节</summary>
+    /// <param name="value">字节</param>
+    /// <remarks>
+    /// 该方法所得的结果和逐段添加字节可能不同
+    /// </remarks>
+    public void AddBytes(ReadOnlySpan<byte> value)
+    {
+        if (value.Length < (sizeof(int) * 4))
+        {
+            goto Small;
+        }
+
+        // Usually Add calls Initialize but if we haven't used HashCode before it won't have been called.
+        if (_length == 0)
+        {
+            Initialize(out _v1, out _v2, out _v3, out _v4);
+        }
+        else
+        {
+            // If we have at least 16 bytes to hash, we can add them in 16-byte batches,
+            // but we first have to add enough data to flush any queued values.
+            switch (_length % 4)
+            {
+                case 1:
+                    System.Diagnostics.Debug.Assert(value.Length >= sizeof(int));
+                    Add(ToInt32(value));
+                    value = value.Slice(sizeof(int));
+                    goto case 2;
+                case 2:
+                    System.Diagnostics.Debug.Assert(value.Length >= sizeof(int));
+                    Add(ToInt32(value));
+                    value = value.Slice(sizeof(int));
+                    goto case 3;
+                case 3:
+                    System.Diagnostics.Debug.Assert(value.Length >= sizeof(int));
+                    Add(ToInt32(value));
+                    value = value.Slice(sizeof(int));
+                    break;
+            }
+        }
+
+        // With the queue clear, we add sixteen bytes at a time until the input has fewer than sixteen bytes remaining.
+        while (value.Length >= sizeof(int) * 4)
+        {
+            _v1 = Round(_v1, ToUInt32(value));
+            _v2 = Round(_v2, ToUInt32(value.Slice(sizeof(int) * 1)));
+            _v3 = Round(_v3, ToUInt32(value.Slice(sizeof(int) * 2)));
+            _v4 = Round(_v4, ToUInt32(value.Slice(sizeof(int) * 3)));
+
+            _length += 4;
+            value = value.Slice(sizeof(int) * 4);
+        }
+
+    Small:
+        // Add four bytes at a time until the input has fewer than four bytes remaining.
+        while (value.Length >= sizeof(int))
+        {
+            Add(ToInt32(value));
+            value = value.Slice(sizeof(int));
+        }
+
+        // Add the remaining bytes a single byte at a time.
+        foreach (byte b in value)
+        {
+            Add((int)b);
+        }
+    }
+
+    private static int ToInt32(ReadOnlySpan<byte> value) =>
+        Runtime.InteropServices.MemoryMarshal.Read<int>(value);
+    private static uint ToUInt32(ReadOnlySpan<byte> value) =>
+        Runtime.InteropServices.MemoryMarshal.Read<uint>(value);
+
+    private void Add(int value)
+    {
+        // The original xxHash works as follows:
+        // 0. Initialize immediately. We can't do this in a struct (no
+        //    default ctor).
+        // 1. Accumulate blocks of length 16 (4 uints) into 4 accumulators.
+        // 2. Accumulate remaining blocks of length 4 (1 uint) into the
+        //    hash.
+        // 3. Accumulate remaining blocks of length 1 into the hash.
+
+        // There is no need for #3 as this type only accepts ints. _queue1,
+        // _queue2 and _queue3 are basically a buffer so that when
+        // ToHashCode is called we can execute #2 correctly.
+
+        // We need to initialize the xxHash32 state (_v1 to _v4) lazily (see
+        // #0) nd the last place that can be done if you look at the
+        // original code is just before the first block of 16 bytes is mixed
+        // in. The xxHash32 state is never used for streams containing fewer
+        // than 16 bytes.
+
+        // To see what's really going on here, have a look at the Combine
+        // methods.
+
+        uint val = (uint)value;
+
+        // Storing the value of _length locally shaves of quite a few bytes
+        // in the resulting machine code.
+        uint previousLength = _length++;
+        uint position = previousLength % 4;
+
+        // Switch can't be inlined.
+
+        if (position == 0)
+            _queue1 = val;
+        else if (position == 1)
+            _queue2 = val;
+        else if (position == 2)
+            _queue3 = val;
+        else // position == 3
+        {
+            if (previousLength == 3)
+                Initialize(out _v1, out _v2, out _v3, out _v4);
+
+            _v1 = Round(_v1, _queue1);
+            _v2 = Round(_v2, _queue2);
+            _v3 = Round(_v3, _queue3);
+            _v4 = Round(_v4, val);
+        }
+    }
+    /// <summary>
+    /// 获取最终哈希结果
+    /// </summary>
+    /// <returns>哈希值</returns>
+    public readonly int ToHashCode()
+    {
+        // Storing the value of _length locally shaves of quite a few bytes
+        // in the resulting machine code.
+        uint length = _length;
+
+        // position refers to the *next* queue position in this method, so
+        // position == 1 means that _queue1 is populated; _queue2 would have
+        // been populated on the next call to Add.
+        uint position = length % 4;
+
+        // If the length is less than 4, _v1 to _v4 don't contain anything
+        // yet. xxHash32 treats this differently.
+
+        uint hash = length < 4 ? MixEmptyState() : MixState(_v1, _v2, _v3, _v4);
+
+        // _length is incremented once per Add(Int32) and is therefore 4
+        // times too small (xxHash length is in bytes, not ints).
+
+        hash += length * 4;
+
+        // Mix what remains in the queue
+
+        // Switch can't be inlined right now, so use as few branches as
+        // possible by manually excluding impossible scenarios (position > 1
+        // is always false if position is not > 0).
+        if (position > 0)
+        {
+            hash = QueueRound(hash, _queue1);
+            if (position > 1)
+            {
+                hash = QueueRound(hash, _queue2);
+                if (position > 2)
+                    hash = QueueRound(hash, _queue3);
+            }
+        }
+
+        hash = MixFinal(hash);
+        return (int)hash;
+    }
+
+#pragma warning disable 0809
+
+    /// <summary>
+    /// 请使用ToHashCode来获得结果
+    /// </summary>
+    /// <returns></returns>
+    /// <exception cref="NotSupportedException"></exception>
+    [Obsolete("请使用ToHashCode来获得结果", error: true)]
+    public readonly override int GetHashCode() => throw new NotSupportedException("HashCodeNotSupported:请使用ToHashCode来获得结果!");
+    /// <summary>
+    /// 不能比较两个HashCode
+    /// </summary>
+    /// <param name="obj">另一个对象</param>
+    /// <returns></returns>
+    /// <exception cref="NotSupportedException"></exception>
+
+    [Obsolete("不允许对比两个HashCode", error: true)]
+    public readonly override bool Equals(object? obj) => throw new NotSupportedException("EqualityNotSupported:不允许对比两个HashCode!");
+#pragma warning restore 0809
 }
 
+#endregion
 
+#region Range
 /// <summary>表示一个具有起始索引和结束索引的范围。</summary>
 /// <remarks>
 /// 对应 C# 的 .. 范围语法，例如 0..^1。
@@ -401,7 +824,7 @@ public readonly struct Range : IEquatable<Range>
             ptr--;
             *ptr = '^';
         }
-        ptr-=2;
+        ptr -= 2;
         ptr[0] = ptr[1] = '.';
         value = (uint)this.Start.Value;
         do
@@ -466,4 +889,4 @@ public readonly struct Range : IEquatable<Range>
     }
 }
 
-
+#endregion

@@ -29,6 +29,21 @@ namespace PCL.CS.Pages
             WithGroupUI = MainCard.Child;
             NoGroupUI = BuildNoGroupUI();
             Minecraft.OnSelectGroupChanged += RefreshSelectGroup;
+            InstancesStack.AddHandler(MyListItem.ClickEvent, (RoutedEventHandler)OnListItemClicked);
+        }
+
+        private void OnListItemClicked(object sender, RoutedEventArgs args)
+        {
+            if (args.Source is not FrameworkElement Item) return;
+            if (Item.Tag is not XeF4Core.MinecraftCore.Minecraft Mc)
+            {
+                PagesContent.ChangePage(1);
+            }
+            else
+            {
+                Minecraft.SelectInstance(Mc);
+                PagesContent.PageBack();
+            }
         }
 
         private void RefreshSelectGroup(object sender, XeF4Core.MinecraftCore.MinecraftGroup e)
@@ -59,7 +74,7 @@ namespace PCL.CS.Pages
                 HorizontalAlignment = HorizontalAlignment.Center,
                 Text = "选择文件夹",
                 FontSize = 19,
-                UseLayoutRounding= true,
+                UseLayoutRounding = true,
                 SnapsToDevicePixels = true
             };
             LabNoGroupTitle.SetResourceReference(TextBlock.ForegroundProperty, "ColorBrush3");
@@ -88,8 +103,13 @@ namespace PCL.CS.Pages
         public override void Reset()
         {
             MainCard.Opacity = 0;
+        }
+        public override void OnLoaded()
+        {
+            base.OnLoaded();
             RefreshUI();
         }
+
         private void RefreshUI()
         {
             if (Minecraft.SelectedGroup is null) MainCard.Child = NoGroupUI;
@@ -123,20 +143,22 @@ namespace PCL.CS.Pages
         {
             InstancesStack.Children.Clear();
             if (Minecraft.SelectedGroup is not null)
-                foreach (var instance in Minecraft.SelectedGroup)
+                Main.Hint($"游戏文件夹位于{Minecraft.SelectedGroup.MinecraftDirectory.FullName},拥有{Minecraft.SelectedGroup.Minecrafts.Count}个游戏");
+            foreach (var instance in Minecraft.SelectedGroup.Minecrafts)
+            {
+                var Btn = new MyClickableItem
                 {
-                    var Btn = new MyClickableItem
-                    {
-                        Height = 50,
-                        UseImage = true,
-                        LogoScale = 0.9,
-                        Title = instance.VersionName,
-                        Info = $"{instance.Version} {instance.BuildType}",
-                        AutoCheck = false
-                    };
-                    Btn.ImagePath = App.Current.Resources["PCL.CS.Image.Blocks.Grass.png"] as MyImageSource;
-                    InstancesStack.Children.Add(Btn);
-                }
+                    Height = 50,
+                    UseImage = true,
+                    LogoScale = 0.9,
+                    Title = instance.VersionName,
+                    Info = $"{instance.Version} {instance.BuildType}",
+                    AutoCheck = false
+                };
+                Btn.ImagePath = App.Current.Resources["Image.Blocks.Grass.png"] as MyImageSource;
+                Btn.Tag = instance;
+                InstancesStack.Children.Add(Btn);
+            }
             InstancesStack.Children.Add(BtnDownload);
         }
         public override AnimationGroup AnimationIn()

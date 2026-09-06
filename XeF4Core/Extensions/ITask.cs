@@ -69,7 +69,7 @@ public class MyTaskList : IMyTaskList
         get
         {
             double progress = 0;
-            foreach(IMyTask task in Children)
+            foreach (IMyTask task in Children)
             {
                 if (task.Progress is not double.NaN)
                     progress += task.Progress;
@@ -87,7 +87,7 @@ public class MyTaskList : IMyTaskList
             if (_w is null)
             {
                 List<Task> tasks = new();
-                foreach(IMyTask task in Children)
+                foreach (IMyTask task in Children)
                 {
                     tasks.Add(task.WaitAsync());
                 }

@@ -99,31 +99,9 @@ public sealed class DownloadTask : IMyTask
         InnerTask = Download();
     }
     internal TaskCompletionSource<object?> Allows = new();
-    private static readonly Dictionary<WeakReference<Downloader>, MyWorkingList> _WaitingDownloadTasks = new();
-    internal static void CleanRef(Downloader downloader)
-    {
-        if (_WaitingDownloadTasks.TryGetValue(downloader.weakReference, out var list)) downloader.OnLimitRefresh -= list.RefreshAsyncWork;
-        _WaitingDownloadTasks.Remove(downloader.weakReference);
-    }
     private MyWorkingList WaitingDownloadTasks
     {
-        get
-        {
-            bool IsAllow(int TaskCounter)
-            {
-                lock (Owner.locker)
-                    //至少要有10%线程余量且线程数不能超过32
-                    return ((double)Owner.TasksUsing / Owner.DownloadThreadLimit <= 0.9) && (TaskCounter < 48);
-            }
-            if (!_WaitingDownloadTasks.TryGetValue(Owner.weakReference, out var tasks))
-            {
-                tasks = new();
-                Owner.OnLimitRefresh += tasks.RefreshAsyncWork;
-                tasks.LimitChecker = IsAllow;
-                _WaitingDownloadTasks[Owner.weakReference] = tasks;
-            }
-            return tasks;
-        }
+        get => Owner.WorkingList;
     }
     private async Task Download()
     {
@@ -219,7 +197,6 @@ public sealed class DownloadTask : IMyTask
 /// </summary>
 public class Downloader
 {
-    internal readonly WeakReference<Downloader> weakReference;
 
     internal readonly object locker = new();
     /// <summary>
@@ -227,13 +204,15 @@ public class Downloader
     /// </summary>
     public Downloader()
     {
-        weakReference = new(this);
+        bool IsAllow(int TaskCounter)
+        {
+            lock (locker)
+                //至少要有10%线程余量且线程数不能超过32
+                return ((double)TasksUsing / DownloadThreadLimit <= 0.9) && (TaskCounter < 48);
+        }
+        WorkingList.LimitChecker = IsAllow;
     }
-    ///
-    ~Downloader()
-    {
-        DownloadTask.CleanRef(this);
-    }
+    internal readonly MyWorkingList WorkingList = new();
     #region 公共方法
     /// <summary>
     /// 从指定URL下载文件到缓存文件夹。

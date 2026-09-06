@@ -25,7 +25,6 @@ public class Minecraft : IDisposable
 
     #region 实例成员
     private bool _disposed = false;
-
     private void ThrowIfNotAvailable()
     {
         if (_disposed) throw new ObjectDisposedException(GetType().FullName);
@@ -88,7 +87,7 @@ public class Minecraft : IDisposable
     private void RefreshJson()
     {
         using FileStream file = JsonPath.OpenRead();
-        var json = Extensions.DeserializeJson<MinecraftJsonInfomation>(file) ?? throw new JsonException($"无法解析位于 {JsonPath.FullName} 的Json！");
+        var json = JsonExtensions.DeserializeJson<MinecraftJsonInfomation>(file) ?? throw new JsonException($"无法解析位于 {JsonPath.FullName} 的Json！");
         _Json = json;
     }
     private MinecraftJsonInfomation _Json;
@@ -100,7 +99,7 @@ public class Minecraft : IDisposable
     /// <summary>
     /// 游戏版本
     /// </summary>
-    public string Version { get => MinecraftJson.ClientVersion ?? throw new JsonException($"无法解析位于 {JsonPath.FullName} 的Json！"); }
+    public string Version { get => MinecraftJson.ClientVersion ?? MinecraftJson.Id ?? throw new JsonException($"无法解析位于 {JsonPath.FullName} 的Json！"); }
     /// <summary>
     /// 游戏发布号
     /// </summary>
@@ -110,12 +109,18 @@ public class Minecraft : IDisposable
     /// </summary>
     /// <returns></returns>
     public bool IsAvailable => JsonPath.Exists && Path.GetExtension(JsonPath.Name) is ".json" && !_disposed && Minecrafts.ContainsValue(this);
-    private Minecraft(FileInfo jsonPath)
+    private Minecraft(FileInfo jsonPath,string fullPath)
     {
+        Minecrafts.Add(fullPath, this);
         VersionPath = jsonPath.Directory;
         JsonPath = jsonPath;
         CorePath = new FileInfo(Path.Combine(jsonPath.DirectoryName, Path.GetFileNameWithoutExtension(jsonPath.Name) + ".jar"));
         RefreshJson();
+        if (MinecraftJson.ClientVersion is null)
+        {
+            MinecraftJson.ClientVersion = MinecraftJson.Id;
+            ChangeJson();
+        }
         _ = VersionName ?? throw new JsonException($"无法解析位于 {JsonPath.FullName} 的Json！");
         _ = _Json ?? throw new JsonException($"无法解析位于 {JsonPath.FullName} 的Json！");
         PublicPath = jsonPath.Directory;
@@ -128,6 +133,7 @@ public class Minecraft : IDisposable
             "old_beta" => BuildType.Beta,
             _ => BuildType.Release
         };
+        
     }
     private static Dictionary<string, Minecraft> Minecrafts = new();
     /// <summary>
@@ -348,7 +354,7 @@ public class Minecraft : IDisposable
     /// </summary>
     /// <returns></returns>
     /// <exception cref="NullReferenceException"></exception>
-    public IMyTask AssetsChecks() => AssetsChecks(DefaultDownloader ?? throw new NullReferenceException("请使用FileChecks(Downloader)函数"));
+    public IMyTask AssetsChecks() => AssetsChecks(DefaultDownloader ?? throw new NullReferenceException("请使用AssetsChecks(Downloader)函数"));
     /// <summary>
     /// 进行资源文件补全
     /// </summary>
@@ -369,12 +375,12 @@ public class Minecraft : IDisposable
             async Task CheckAssets()
             {
                 string indexPath = Path.Combine(PublicPath.FullName, "assets", "indexes", $"{assetIndex.Id}.json");
-                //Core.Log($"开始下载资源索引文件：{indexUrl} => {indexPath}");
-                if (!File.Exists(indexPath) || Minecraft.ComputeFileSha1(indexPath) != indexSha1)
+                Core.Log($"开始下载资源索引文件：{indexUrl} => {indexPath}");
+                if (!File.Exists(indexPath) || false) //Minecraft.ComputeFileSha1(indexPath) != indexSha1;
                     await downloader.Download(indexUrl, indexPath);
-                //Core.Log($"下载资源索引文件完成");
+                Core.Log($"下载资源索引文件完成");
                 using var fStream = File.OpenRead(indexPath);
-                var Index = Extensions.DeserializeJson<MinecraftAssetsIndex>(fStream);
+                var Index = JsonExtensions.DeserializeJson<MinecraftAssetsIndex>(fStream);
                 if (Index is null) return;
                 var objectPath = Path.Combine(PublicPath.FullName, "assets", "objects");
                 if (!Directory.Exists(objectPath)) Directory.CreateDirectory(objectPath);
@@ -387,7 +393,7 @@ public class Minecraft : IDisposable
                     {
                         // 下载：https://resources.download.minecraft.net/<hash前两位>/<hash>
                         string url = $"https://resources.download.minecraft.net/{subDir}/{Hash}";
-                        //Core.Log($"下载资源文件：{url} => {localPath}");
+                        Core.Log($"下载资源文件：{url} => {localPath}");
                         assetsCheck.downloads.Add(downloader.Download(url, localPath));
                     }
                 }
@@ -410,7 +416,7 @@ public class Minecraft : IDisposable
         //}
         bool Used = true;
         if (rule.Os is not null)
-            if (rule.Os.Name is not null && !RuntimeInformation.IsOSPlatform(((OSPlatform)rule.Os.Name).ToOsPlatform())) Used = false;
+            if (rule.Os.Name is not null && rule.Os.Name is not OSPlatform.Universal && !RuntimeInformation.IsOSPlatform(((OSPlatform)rule.Os.Name).ToOsPlatform())) Used = false;
             else if (!Extensions.IsArchMatch(rule.Os.Arch)) Used = false;
 
         if (rule.Action is "disallow") Used = !Used;
@@ -440,8 +446,10 @@ public class Minecraft : IDisposable
     public static Minecraft FromJsonPath(string jsonPath)
     {
         if (jsonPath is null) throw new ArgumentNullException(nameof(jsonPath));
+
+        jsonPath = FileExtensions.GetCanonicalPath(jsonPath);
         var Info = new FileInfo(jsonPath);
-        if (Minecrafts.TryGetValue(Info.FullName, out var MC))
+        if (Minecrafts.TryGetValue(jsonPath, out var MC))
         {
             if (!MC.IsAvailable)
             {
@@ -454,7 +462,7 @@ public class Minecraft : IDisposable
         {
             if (!Info.Exists || Path.GetExtension(jsonPath) is not ".json") throw new Exception("创建指定实例失败");
         }
-        var mc = new Minecraft(Info);
+        var mc = new Minecraft(Info, jsonPath);
         return mc;
     }
     /// <summary>
@@ -599,7 +607,7 @@ public class Minecraft : IDisposable
     /// <param name="downloader">所使用的下载器</param>
     /// <param name="directory">目标文件夹</param>
     /// <returns></returns>
-    public static MinecraftDownloadTask Download(MinecraftVersion version,Downloader downloader,DirectoryInfo directory)=>
+    public static MinecraftDownloadTask Download(MinecraftVersion version, Downloader downloader, DirectoryInfo directory) =>
         Download(version, version.Id ?? throw new ArgumentNullException(nameof(version.Id)), downloader, directory, directory);
 
     /// <summary>
@@ -611,13 +619,13 @@ public class Minecraft : IDisposable
     /// <param name="directory">目标文件夹</param>
     /// <param name="PublicPath">目标实例的公共目录</param>
     /// <returns></returns>
-    public static MinecraftDownloadTask Download(MinecraftVersion version, string Name, Downloader downloader, DirectoryInfo directory,DirectoryInfo PublicPath)
+    public static MinecraftDownloadTask Download(MinecraftVersion version, string Name, Downloader downloader, DirectoryInfo directory, DirectoryInfo PublicPath)
     {
         string JsonPath = Path.Combine(directory.FullName, $"{Name}.json");
 
         if (File.Exists(JsonPath)) File.Delete(JsonPath);
         if (Minecrafts.TryGetValue(JsonPath, out var result)) result.Dispose();
-        
+
         MinecraftDownloadTask task = new();
 
         var dwnldtask1 = downloader.Download(version.Url ?? throw new ArgumentException($"{nameof(version)}中的参数不合法！"), JsonPath);
@@ -633,7 +641,7 @@ public class Minecraft : IDisposable
             {
                 await dwnldtask1;
             }
-            catch(Exception ex) 
+            catch (Exception ex)
             {
                 task.Finishing.SetException(ex);
                 throw;
@@ -675,7 +683,7 @@ public class Minecraft : IDisposable
             //此时mc已由上面的函数完成
             if (mc is null)
             {
-                task.Finishing.SetException( new NullReferenceException());
+                task.Finishing.SetException(new NullReferenceException());
                 return;
             }
             int FailCounter = 0;
@@ -709,7 +717,7 @@ public class Minecraft : IDisposable
         public string? Name { get; set; }
 
         public Task? Task;
-        public TaskAwaiter GetAwaiter() => Task?.GetAwaiter()??throw new NullReferenceException();
+        public TaskAwaiter GetAwaiter() => Task?.GetAwaiter() ?? throw new NullReferenceException();
         public void Wait() => Task?.Wait();
         public Task WaitAsync() => Task ?? throw new NullReferenceException();
     }

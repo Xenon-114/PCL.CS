@@ -299,20 +299,41 @@
     </Style>
 
     <Style TargetType="{x:Type local:MyButton}">
-        <Setter Property="Scale" Value="1"/>
+        <Setter Property="AnimateScale" Value="1"/>
         <Setter Property="Focusable" Value="True"/>
+        <Setter Property="ColorBackNormal" Value="{DynamicResource ColorObjectWhite}"/>
         <Setter Property="Template">
             <Setter.Value>
-                <ControlTemplate TargetType="local:MyButton">
+                <ControlTemplate TargetType="{x:Type local:MyButton}">
                     <Border Background="Transparent">
-                        <Border CornerRadius="3" BorderThickness="1" Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding Foreground}" RenderTransformOrigin="0.5,0.5" RenderTransform="{TemplateBinding ScaleTransform}">
-                            <TextBlock HorizontalAlignment="Center" VerticalAlignment="Center" Text="{TemplateBinding Text}" Foreground="{TemplateBinding Foreground}" Padding="{TemplateBinding TextPadding}"/>
+                        <Border CornerRadius="3" BorderThickness="1" RenderTransformOrigin="0.5,0.5" x:Name="PART_Border">
+                            <TextBlock HorizontalAlignment="Center" VerticalAlignment="Center" Text="{TemplateBinding Text}" Padding="{TemplateBinding TextPadding}"
+                                       x:Name="PART_TextBlock">
+                            </TextBlock>
                         </Border>
                     </Border>
                 </ControlTemplate>
             </Setter.Value>
         </Setter>
+        <Style.Triggers>
+            <Trigger Property="ColorType" Value="Normal">
+                <Setter Property="ColorBorderNormal" Value="{DynamicResource ColorObject1}"/>
+                <Setter Property="ColorBorderHighlight" Value="{DynamicResource ColorObject3}"/>
+                <Setter Property="ColorBackHighlight" Value="{DynamicResource ColorObject7}"/>
+            </Trigger>
+            <Trigger Property="ColorType" Value="HighLight">
+                <Setter Property="ColorBorderNormal" Value="{DynamicResource ColorObject2}"/>
+                <Setter Property="ColorBorderHighlight" Value="{DynamicResource ColorObject3}"/>
+                <Setter Property="ColorBackHighlight" Value="{DynamicResource ColorObject7}"/>
+            </Trigger>
+            <Trigger Property="ColorType" Value="Red">
+                <Setter Property="ColorBorderNormal" Value="{DynamicResource ColorObjectRedDark}"/>
+                <Setter Property="ColorBorderHighlight" Value="{DynamicResource ColorObjectRedLight}"/>
+                <Setter Property="ColorBackHighlight" Value="{DynamicResource ColorObjectRedBack}"/>
+            </Trigger>
+        </Style.Triggers>
     </Style>
+
 
     <Style TargetType="{x:Type page:MyLaunchButton}">
         <Setter Property="Scale" Value="1"/>

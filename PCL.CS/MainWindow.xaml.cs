@@ -37,7 +37,7 @@ namespace PCL.CS
         }
         private static MainWindow CurrentWindow = null;
 
-        public static MyMsgBox CurrentMsgBox { get; } = new MyMsgBox();
+        public static MyMsgBox CurrentMsgBox { get; private set; }
 
         private ScaleTransform MainScale = new ScaleTransform();
         private RotateTransform MainRotate = new RotateTransform();
@@ -60,6 +60,8 @@ namespace PCL.CS
         {
             InitializeComponent();
 
+            CurrentMsgBox ??= new MyMsgBox();
+
             this.Height = Config.Current.WindowHeight;
             this.Width = Config.Current.WindowWidth;
 
@@ -75,6 +77,7 @@ namespace PCL.CS
             {
                 if (PanMsg.IsMouseDirectlyOver) DragMove();
             };
+            PagesContent.OnPageChanged += OnPageIndexChanged;
             this.PanMsg.Child = CurrentMsgBox;
             this.Loaded += MainWindow_Loaded;
             PgLeftBorder.SizeChanged += PgLeftAnim;
@@ -111,19 +114,27 @@ namespace PCL.CS
                 PgRightBorder.ClipToBounds = true;
                 Base.Log($"[Loading]初始化页面完成");
             }
-            
+
             RadioStackMain.SelectIndexChanged += RadioStackMain_SelectedIndexChanged;
             PanTitleLeft.Back += PanTitleLeft_Back;
 
             //MainWindow.CurrentMsgBox = this.MsgBox;
         }
-
+        private void OnPageIndexChanged(object sender, int args)
+        {
+            if (args >= 5) return;
+            if (args < 0) return;
+            if (RadioStackMain.Children.IndexOf(RadioStackMain.SelectItem as UIElement) != args)
+            {
+                RadioStackMain.SelectItem = RadioStackMain.Children[args] as IMyRadio;
+            }
+        }
         protected override void OnKeyUp(KeyEventArgs e)
         {
             base.OnKeyUp(e);
             if (IsShowingMessage) CurrentMsgBox.OnThisKeyDown(e.Key);
         }
-        private void PgLeftAnim(object s,SizeChangedEventArgs e)
+        private void PgLeftAnim(object s, SizeChangedEventArgs e)
         {
             if (!this.IsLoaded) return;
             if (e.NewSize.Width == e.PreviousSize.Width) return;
@@ -136,14 +147,14 @@ namespace PCL.CS
             MainWindowAnim = new AnimationGroup();
             MainWindowAnim.TotalTime = TimeSpan.FromMilliseconds(600);
             MainWindowAnim.Add(new DoubleAnimation(MainRotate, RotateTransform.AngleProperty, -4, 0, 500, 0, new AniEaseOutBack(2)));
-            MainWindowAnim.Add(new DoubleAnimation(MainTranslate, TranslateTransform.YProperty, 60, 0,600, 0, new AniEaseOutBack(2)));
+            MainWindowAnim.Add(new DoubleAnimation(MainTranslate, TranslateTransform.YProperty, 60, 0, 600, 0, new AniEaseOutBack(2)));
             MainWindowAnim.Add(new DoubleAnimation(MainGrid, Grid.OpacityProperty, 0, 1, 250, 0));
             //MainGrid.Opacity = 1;
             Animation.Start(MainWindowAnim);
             MWindow.PageLeftBackWidth = PgLeftBorder.ActualWidth;
             LoadedTask.SetResult(null);
         }
-        private void MainWindow_Closed(object sender,RoutedEventArgs e)
+        private void MainWindow_Closed(object sender, RoutedEventArgs e)
         {
             this.IsHitTestVisible = false;
 
@@ -167,7 +178,7 @@ namespace PCL.CS
                 }));
                 Base.UIDispatcher.BeginInvokeShutdown(DispatcherPriority.Normal);
             });
-            AnimationGroup OutAnimGroup= new AnimationGroup(){ OutRenderAnim, OutSizeXAnim, OutSizeYAnim, OutOpacityAnim, Event };
+            AnimationGroup OutAnimGroup = new AnimationGroup() { OutRenderAnim, OutSizeXAnim, OutSizeYAnim, OutOpacityAnim, Event };
             Animation.Start(OutAnimGroup);
         }
 
@@ -229,7 +240,7 @@ namespace PCL.CS
             //Base.Log($"切换右页面，已启用右页面动画");
             Animation.Start(PageRightChangeAnim);
             Animation AnimIn = PageRightChangeAnim;
-            
+
             EventAnimation Eventa = new EventAnimation(TimeSpan.FromMilliseconds(300), () =>
             {
                 PageRightChangeAnim = NewPageRight?.AnimationIn();
@@ -394,7 +405,7 @@ namespace PCL.CS
             {
                 return nint.Zero;
             }
-            
+
 
 
             // 判断鼠标是否在窗口范围内

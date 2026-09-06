@@ -75,7 +75,7 @@ public class MyWorkingList
             }
             RefreshAsyncWork();
         }
-        
+
     }
 }
 /// <summary>

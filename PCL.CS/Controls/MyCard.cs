@@ -32,7 +32,8 @@ namespace PCL.CS.Controls
         public bool IsSwapped
         {
             get => _Swapped;
-            set {
+            set
+            {
                 _Swapped = value;
                 if (ContentPre != null)
                     ContentPre.IsHitTestVisible = !value;
@@ -49,6 +50,7 @@ namespace PCL.CS.Controls
                 MainRefresh();
             }
         }
+        public bool IsHeightAnimEnabled { get; set; } = true;
 
         public RotateTransform BtnRotate
         {
@@ -118,7 +120,7 @@ namespace PCL.CS.Controls
         {
             get => Math.Sqrt(Math.Sqrt(Math.Abs(ContentAnimHeight - ContentHeight))) * 100;
         }
-        
+
         private double ContentHeight
         {
             get
@@ -165,7 +167,7 @@ namespace PCL.CS.Controls
                 Foreground.Color = (s as MyBorder).BorderColor;
             });
             ContentPre = GetTemplateChild("PART_Content") as ContentPresenter;
-            ContentPre.SizeChanged += (s,e)=>
+            ContentPre.SizeChanged += (s, e) =>
             {
                 if (e.NewSize.Height != e.PreviousSize.Height) ContentSizeChange();
             };
@@ -181,7 +183,7 @@ namespace PCL.CS.Controls
         }
 
         #region 主事件处理
-        private void EventUnSwap(object sender,EventArgs e)
+        private void EventUnSwap(object sender, EventArgs e)
         {
             if (!this.CanSwap) return;
             if (this.IsSwapped)
@@ -201,6 +203,11 @@ namespace PCL.CS.Controls
         {
             if (!this.IsLoaded) return;
             Animation.Stop(HeightChangeAnim);
+            if (!IsHeightAnimEnabled)
+            {
+                this.ContentAnimHeight = this.ContentHeight;
+                return;
+            }
             HeightChangeAnim = new AnimationGroup();
             HeightChangeAnim.TotalTime = TimeSpan.FromMilliseconds(HeightChangeAnimLenth);
             HeightChangeAnim.Add(new DoubleAnimation(this, ContentAnimHeightProperty, this.ContentAnimHeight, this.ContentHeight, HeightChangeAnimLenth, 0, new AniEaseOutFluent(3)));

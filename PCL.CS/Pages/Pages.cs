@@ -15,18 +15,19 @@ namespace PCL.CS.Pages
     {
         static PagesContent()
         {
+            PagesStack.Push(0);
             Pages.Add(new MyPageTemplate(new PageLaunchLeft(), new List<MyPageRight> { null }, false, ""));
             Pages.Add(new MyPageTemplate(new PageDownloadLeft(), new List<MyPageRight> { new MyDeveloping() }, false, ""));
             Pages.Add(new MyPageTemplate(null, new List<MyPageRight> { new MyDeveloping() }, false, ""));
             Pages.Add(new MyPageTemplate(null, new List<MyPageRight> { new MyDeveloping() }, false, ""));
             Pages.Add(new MyPageTemplate(null, new List<MyPageRight> { new PageAbout() }, false, ""));
             Pages.Add(new MyPageTemplate(new PageGamesLeft(), new List<MyPageRight> { new PageGamesRight() }, true, "版本选择"));
-            PagesStack.Push(0);
         }
 
         public static List<MyPageTemplate> Pages = new List<MyPageTemplate>();
         private static Stack<int> PagesStack = new Stack<int>();
         public static int PageIndex { get { return PagesStack.Peek(); } }
+        public static event EventHandler<int> OnPageChanged;
         /// <summary>
         /// 更改页面
         /// </summary>
@@ -35,8 +36,9 @@ namespace PCL.CS.Pages
         {
             if (Index > Pages.Count) return;
             MyPageTemplate Page = Pages[Index];
+            OnPageChanged?.Invoke(null, Index);
             Main.MainWnd.ChangePageLeft(Page.PageLeft);
-            //Base.Log($"更改页面，索引：{Index}");
+            Base.Log($"更改页面，索引：{Index}");
             Main.MainWnd.ChangePageRight(Page.PageRight[Page.PgRightIndex]);
             if (Page.IsSubPage)
             {
@@ -80,8 +82,9 @@ namespace PCL.CS.Pages
         /// </summary>
         public static void PageBack()
         {
-            PagesStack.Pop();
-            if (!PagesStack.Any()) PagesStack.Push(0);
+            if (PagesStack.Count > 0)
+                PagesStack.Pop();
+            if (!(PagesStack.Count > 0)) PagesStack.Push(0);
             int Index = PagesStack.Peek();
             ChangePage(Index);
         }
@@ -89,11 +92,11 @@ namespace PCL.CS.Pages
     public class MyPageTemplate
     {
         public MyPageLeft PageLeft { get; set; }
-        public List<MyPageRight> PageRight {  get; set; }
+        public List<MyPageRight> PageRight { get; set; }
         public int PgRightIndex { get; set; } = 0;
-        public bool IsSubPage {  get; set; }
-        public string Title {  get; set; }
-        public MyPageTemplate(MyPageLeft pageLeft, List<MyPageRight> pageRight, bool isSubPage=true, string title="SubPage")
+        public bool IsSubPage { get; set; }
+        public string Title { get; set; }
+        public MyPageTemplate(MyPageLeft pageLeft, List<MyPageRight> pageRight, bool isSubPage = true, string title = "SubPage")
         {
             PageLeft = pageLeft;
             PageRight = pageRight;
