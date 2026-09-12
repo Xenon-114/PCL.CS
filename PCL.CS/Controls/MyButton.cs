@@ -1,6 +1,7 @@
-using PCL.CS.Modules;
+﻿using PCL.CS.Modules;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Controls.Primitives;
 using System.Windows.Data;
 using System.Windows.Input;
 using System.Windows.Media;
@@ -9,7 +10,7 @@ using XeF4Core.WPF;
 
 namespace PCL.CS.Controls
 {
-    public class MyButton : Control
+    public class MyButton : ContentControl
     {
         public Color ColorBorder
         {
@@ -80,23 +81,14 @@ namespace PCL.CS.Controls
         public static readonly DependencyProperty AnimateScaleProperty =
             DependencyProperty.Register(nameof(AnimateScale), typeof(double), typeof(MyButton), new PropertyMetadata((double)1));
 
-
-        public string Text
+        public Thickness ContentPadding
         {
-            get => (string)GetValue(TextProperty);
-            set => SetValue(TextProperty, value);
-        }
-        public static readonly DependencyProperty TextProperty = DependencyProperty.Register("Text", typeof(string), typeof(MyButton),
-            new PropertyMetadata("按钮"));
-
-        public Thickness TextPadding
-        {
-            get { return (Thickness)GetValue(TextPaddingProperty); }
-            set { SetValue(TextPaddingProperty, value); }
+            get { return (Thickness)GetValue(ContentPaddingProperty); }
+            set { SetValue(ContentPaddingProperty, value); }
         }
 
-        public static readonly DependencyProperty TextPaddingProperty =
-            DependencyProperty.Register(nameof(TextPadding), typeof(Thickness), typeof(MyButton), new PropertyMetadata(new Thickness()));
+        public static readonly DependencyProperty ContentPaddingProperty =
+            DependencyProperty.Register(nameof(ContentPadding), typeof(Thickness), typeof(MyButton), new PropertyMetadata(new Thickness()));
         public enum ColorState
         {
             Normal,
@@ -110,7 +102,7 @@ namespace PCL.CS.Controls
             get { return (ColorState)GetValue(ColorTypeProperty); }
             set { SetValue(ColorTypeProperty, value); }
         }
-        
+
         public static readonly DependencyProperty ColorTypeProperty =
             DependencyProperty.Register(nameof(ColorType), typeof(ColorState), typeof(MyButton), new PropertyMetadata(ColorState.Normal));
 
@@ -126,7 +118,6 @@ namespace PCL.CS.Controls
         {
             base.OnApplyTemplate();
             var border = Template.FindName("PART_Border", this) as Border;
-            var textBlock = Template.FindName("PART_TextBlock", this) as TextBlock;
             var brush = new SolidColorBrush();
             brush.SetBinding(SolidColorBrush.ColorProperty, new Binding(nameof(ColorBorder))
             {
@@ -134,7 +125,7 @@ namespace PCL.CS.Controls
                 UpdateSourceTrigger = UpdateSourceTrigger.PropertyChanged,
                 Mode = BindingMode.OneWay
             });
-            var backBrush= new SolidColorBrush();
+            var backBrush = new SolidColorBrush();
             backBrush.SetBinding(SolidColorBrush.ColorProperty, new Binding(nameof(ColorBack))
             {
                 Source = this,
@@ -154,7 +145,7 @@ namespace PCL.CS.Controls
             border.RenderTransform = scale;
             border.BorderBrush = brush;
             border.Background = backBrush;
-            textBlock.Foreground = brush;
+            this.Foreground = brush;
         }
 
         protected override void OnMouseEnter(MouseEventArgs e)
@@ -176,6 +167,7 @@ namespace PCL.CS.Controls
             IsMousePressed = true;
             ColorUpdate();
             ScaleTo(0.955, 80, new AniEaseOutFluent(4));
+            Focus();
         }
         protected override void OnMouseLeftButtonUp(MouseButtonEventArgs e)
         {
@@ -234,11 +226,12 @@ namespace PCL.CS.Controls
             BackColorMixer.SetBinding(ColorMixer.ColorBProperty, new Binding(nameof(ColorBackHighlight)) { Source = this, UpdateSourceTrigger = UpdateSourceTrigger.PropertyChanged });
             this.SetBinding(ColorBackProperty, new Binding(nameof(ColorMixer.ColorResult)) { Source = BackColorMixer, UpdateSourceTrigger = UpdateSourceTrigger.PropertyChanged });
         }
-        public static readonly RoutedEvent ClickEvent = Button.ClickEvent;
+
+        public static RoutedEvent ClickEvent = Button.ClickEvent;
         public event RoutedEventHandler Click
         {
-            add { AddHandler(ClickEvent, value); }
-            remove { RemoveHandler(ClickEvent, value); }
+            add => AddHandler(ClickEvent, value);
+            remove => RemoveHandler(ClickEvent, value);
         }
     }
 }

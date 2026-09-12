@@ -113,9 +113,9 @@ namespace PCL.CS.Controls
                 BindingOperations.ClearBinding(PanContent, ContentProperty);
                 BindingOperations.ClearBinding(PanExtraContent, ContentProperty);
                 BindingOperations.ClearBinding(LabTitle, TextBlock.TextProperty);
-                BindingOperations.ClearBinding(Btn1, MyButton.TextProperty);
-                BindingOperations.ClearBinding(Btn2, MyButton.TextProperty);
-                BindingOperations.ClearBinding(Btn3, MyButton.TextProperty);
+                BindingOperations.ClearBinding(Btn1, MyButton.ContentProperty);
+                BindingOperations.ClearBinding(Btn2, MyButton.ContentProperty);
+                BindingOperations.ClearBinding(Btn3, MyButton.ContentProperty);
                 PanContent.Content = null;
                 PanExtraContent.Content = null;
                 return;
@@ -123,10 +123,10 @@ namespace PCL.CS.Controls
             PanContent.SetBinding(ContentProperty, new Binding("Content") { Source = _MyMsg });
             PanExtraContent.SetBinding(ContentProperty, new Binding("ExtraContent") { Source = _MyMsg });
             LabTitle.SetBinding(TextBlock.TextProperty, new Binding("Title") { Source = _MyMsg });
-            Btn1.SetBinding(MyButton.TextProperty, new Binding("Btn1Text") { Source = _MyMsg });
-            Btn2.SetBinding(MyButton.TextProperty, new Binding("Btn2Text") { Source = _MyMsg });
+            Btn1.SetBinding(MyButton.ContentProperty, new Binding("Btn1Text") { Source = _MyMsg });
+            Btn2.SetBinding(MyButton.ContentProperty, new Binding("Btn2Text") { Source = _MyMsg });
             Btn2.SetBinding(UIElement.IsEnabledProperty, new Binding("Btn2Enable") { Source = _MyMsg });
-            Btn3.SetBinding(MyButton.TextProperty, new Binding("Btn3Text") { Source = _MyMsg });
+            Btn3.SetBinding(MyButton.ContentProperty, new Binding("Btn3Text") { Source = _MyMsg });
             Btn3.SetBinding(UIElement.IsEnabledProperty, new Binding("Btn3Enable") { Source = _MyMsg });
 
             Btn1.ColorType = MyButton.ColorState.Normal;

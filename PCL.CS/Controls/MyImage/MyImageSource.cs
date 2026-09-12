@@ -1,16 +1,13 @@
 ﻿using PCL.CS.Modules;
-using System;
-using System.Collections.Generic;
+using SharpVectors.Renderers.Wpf;
 using System.ComponentModel;
 using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Reflection;
-using System.Security.Policy;
-using System.Text;
-using System.Threading.Tasks;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
+using System.Xml;
 
 namespace PCL.CS.Controls
 {
@@ -20,15 +17,15 @@ namespace PCL.CS.Controls
         public ImageSource GetImageSource()
         {
             LoadingTask.Wait();
-            return Bitmap;
+            return Source;
         }
         public async Task<ImageSource> GetImageSourceAsync()
         {
             await LoadingTask;
-            return Bitmap;
+            return Source;
         }
         
-        private BitmapImage Bitmap { get; set; }
+        private ImageSource Source { get; set; }
         private Task LoadingTask { get; set; }
         private static bool IsPathRooted(string path)
         {
@@ -42,59 +39,157 @@ namespace PCL.CS.Controls
             return (first >= 'A' && first <= 'Z' || first >= 'a' && first <= 'z')
                 && second == ':';
         }
-        private void LoadBitmap()
+        private void LoadImage()
         {
             if (SourcePath.StartsWith("http://", StringComparison.OrdinalIgnoreCase) ||
                 SourcePath.StartsWith("https://", StringComparison.OrdinalIgnoreCase))
             {
-                LoadingTask = LoadBitmapFromInternet();
+                LoadingTask = LoadImageFromInternet();
                 return;
             }
-            LoadingTask = Task.CompletedTask;
-            if (IsPathRooted(SourcePath))
+            LoadingTask = Task.Run(GetInner);
+            void GetInner()
             {
-                LoadBitmapFromFilePath(SourcePath);
+
+
+                if (IsPathRooted(SourcePath))
+                {
+                    LoadImageFromFilePath(SourcePath);
+                    return;
+                }
+                if (SourcePath.StartsWith("./"))
+                {
+                    var FullPath = Path.Combine(Base.Path, SourcePath.Substring(1));
+                    LoadImageFromFilePath(FullPath);
+                    return;
+                }
+                string ResourcePath = SourcePath.TrimStart('/');
+                ResourcePath = $"PCL.CS.{ResourcePath.Replace('/', '.')}";
+                Assembly assembly = Assembly.GetExecutingAssembly();
+                using var ResourceStream = assembly.GetManifestResourceStream(ResourcePath);
+                if (ResourceStream is null)
+                {
+                    Main.Hint($"资源{ResourcePath}不可用！");
+                    return;
+                }
+                LoadImageFromStream(ResourceStream);
                 return;
             }
-            if (SourcePath.StartsWith("./"))
-            {
-                var FullPath = Path.Combine(Base.Path, SourcePath.Substring(1));
-                LoadBitmapFromFilePath(FullPath);
-                return;
-            }
-            string ResourcePath = SourcePath.TrimStart('/');
-            ResourcePath = $"PCL.CS.{ResourcePath.Replace('/', '.')}";
-            Assembly assembly = Assembly.GetExecutingAssembly();
-            using var ResourceStream = assembly.GetManifestResourceStream(ResourcePath);
-            if (ResourceStream is null)
-            {
-                Main.Hint($"资源{ResourcePath}不可用！");
-                return;
-            }
-            LoadBitmapFromStream(ResourceStream);
             return;
         }
-        private async Task LoadBitmapFromInternet()
+        private async Task LoadImageFromInternet()
         {
             string LocalPath = await Net.Download(SourcePath, true);
-            LoadBitmapFromFilePath(LocalPath);
+            LoadImageFromFilePath(LocalPath);
         }
-        private void LoadBitmapFromFilePath(string Path)
+        private void LoadImageFromFilePath(string Path)
         {
             using var Stream = File.OpenRead(Path);
-            LoadBitmapFromStream(Stream);
+            LoadImageFromStream(Stream);
             return;
         }
-        private void LoadBitmapFromStream(Stream Stream)
+        private void LoadImageFromStream(Stream Stream)
         {
-            if (Stream is null) throw new ArgumentNullException(nameof(Stream));
+            //MemoryStream MStream;
+            //    Stream.CopyTo(MStream);
+            if (IsWebPStream(Stream))
+                Source = LoadWebP(Stream);
+            else if (IsSvgStream(Stream))
+                Source = LoadSVG(Stream);
+            else
+                Source = LoadBitmap(Stream);
+        }
+        private static ImageSource LoadBitmap(Stream stream)
+        {
+            if (stream is null) throw new ArgumentNullException(nameof(Stream));
             var bmp = new BitmapImage();
             bmp.BeginInit();
-            bmp.StreamSource = Stream;
+            bmp.StreamSource = stream;
             bmp.CacheOption = BitmapCacheOption.OnLoad;
             bmp.EndInit();
             bmp.Freeze();
-            Bitmap = bmp;
+            return bmp;
+        }
+        private static ImageSource LoadWebP(Stream stream)
+        {
+            using var ms = new MemoryStream();
+            stream.CopyTo(ms);
+            byte[] webpData = ms.ToArray();
+            byte[] pixels = Imazen.WebP.WebPDecoder.Decode(webpData, out int width, out int height, Imazen.WebP.WebPPixelFormat.Bgra);
+            var bitmapSource = BitmapSource.Create(
+                width, height,
+                96, 96,
+                System.Windows.Media.PixelFormats.Bgra32,
+                null,
+                pixels,
+                width * 4 
+            );
+            bitmapSource.Freeze();
+            return bitmapSource;
+        }
+        private static ImageSource LoadSVG(Stream stream)
+        {
+            using var reader = new System.Xml.XmlTextReader(stream);
+            var settings = new WpfDrawingSettings();
+            var svgReader = new SharpVectors.Converters.FileSvgReader(settings);
+            var dImage = new DrawingImage(svgReader.Read(reader));
+            dImage.Freeze();
+            return dImage;
+        }
+        private static bool IsSvgStream(Stream stream)
+        {
+            if (stream == null || !stream.CanRead) return false;
+
+            // 确保流位置在开头
+            if (stream.CanSeek) stream.Seek(0, SeekOrigin.Begin);
+
+            var settings = new XmlReaderSettings
+            {
+                ConformanceLevel = ConformanceLevel.Fragment,
+                IgnoreComments = true,
+                IgnoreWhitespace = true
+            };
+
+            try
+            {
+                using var reader = XmlReader.Create(stream, settings);
+                while (reader.Read())
+                {
+                    if (reader.NodeType == XmlNodeType.Element)
+                    {
+                        return reader.NamespaceURI == "http://www.w3.org/2000/svg"
+                               && reader.LocalName == "svg";
+                    }
+                }
+            }
+            catch (XmlException)
+            {
+                return false;
+            }
+            finally
+            {
+                if (stream.CanSeek) stream.Seek(0, SeekOrigin.Begin);
+            }
+
+            return false;
+        }
+        private static bool IsWebPStream(Stream stream)
+        {
+            if (stream == null || !stream.CanRead) return false;
+            if (stream.CanSeek) stream.Seek(0, SeekOrigin.Begin);
+
+            // 至少需要 12 个字节来判断
+            byte[] header = new byte[12];
+            int bytesRead = stream.Read(header, 0, 12);
+
+            // 重置流位置
+            if (stream.CanSeek) stream.Seek(0, SeekOrigin.Begin);
+
+            if (bytesRead < 12) return false;
+
+            // 检查前4字节是否为 "RIFF"，第9-12字节是否为 "WEBP"
+            return header[0] == 0x52 && header[1] == 0x49 && header[2] == 0x46 && header[3] == 0x46
+                && header[8] == 0x57 && header[9] == 0x45 && header[10] == 0x42 && header[11] == 0x50;
         }
         public MyImageSource(string Path)
         {
@@ -107,7 +202,7 @@ namespace PCL.CS.Controls
             Path = Path.Trim();
             Path = Path.Trim('"', '\'', '“', '”', '‘', '’');
             Path = Path.Replace('\\', '/');
-            LoadBitmap();
+            LoadImage();
         }
         private bool HasSetSourcePath = false;
         private string _sourcePath = null;

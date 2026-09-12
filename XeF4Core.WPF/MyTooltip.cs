@@ -94,7 +94,7 @@ public sealed class MyTooltip : DependencyObject
 
         _OnEnterHandler = OnMouseEnter;
         _OnMoveHandler = OnMouseMove;
-        _OnLeaveHandler= OnMouseLeave;
+        _OnLeaveHandler = OnMouseLeave;
         _OnUnloadedHandler = OnUnload;
 
 
@@ -105,6 +105,11 @@ public sealed class MyTooltip : DependencyObject
 
         // 挂载事件（仅当前根元素范围内）
         _AttachRootEvents();
+
+        if(root is Window Wnd)
+        {
+            Wnd.Deactivated += (s, e) => CloseToolTip();
+        }
     }
 
     #endregion

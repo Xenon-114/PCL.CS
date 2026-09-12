@@ -13,7 +13,8 @@
         Width="850"
         AllowsTransparency="False"
         Background="{x:Null}"
-        ResizeMode="CanResize">
+        ResizeMode="CanResize"
+        FontFamily="{StaticResource LaunchFontFamily}">
     <WindowChrome.WindowChrome>
         <WindowChrome CaptionHeight="0"
                       ResizeBorderThickness="6"

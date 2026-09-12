@@ -18,4 +18,5 @@
     <local:MyImageSource x:Key="Image.Icons.Disabled.png" SourcePath="Image/Icons/Disabled.png"/>
     <local:MyImageSource x:Key="Image.Icons.NoIcon.png" SourcePath="Image/Icons/NoIcon.png"/>
     <local:MyImageSource x:Key="Image.icon.ico" SourcePath="Image/icon.ico"/>
+    <local:MyImageSource x:Key="Image.Icon.svg" SourcePath="Image/Icon.svg"/>
 </ResourceDictionary>

@@ -103,7 +103,7 @@
     
     <Style TargetType="{x:Type local:MyTextBox}">
         <Setter Property="BorderThickness" Value="1" />
-        <Setter Property="Background" Value="{StaticResource ColorBrushHalfWhite}" />
+        <Setter Property="Background" Value="{DynamicResource ColorBrushHalfWhite}" />
         <Setter Property="FontSize" Value="13" />
         <Setter Property="SelectionBrush" Value="{DynamicResource ColorBrush3}" />
         <Setter Property="Foreground" Value="{DynamicResource ColorBrush1}" />
@@ -119,21 +119,25 @@
         <Setter Property="Stylus.IsFlicksEnabled" Value="False"/>
         <Setter Property="UndoLimit" Value="15" />
         <Setter Property="MaxLength" Value="1000" />
+        <Setter Property="BackColorNormal" Value="{DynamicResource ColorObjectHalfWhite}"/>
+        <Setter Property="BackColorSelect" Value="{DynamicResource ColorObject6}"/>
+        <Setter Property="BorderColorNormal" Value="{DynamicResource ColorObject5}"/>
+        <Setter Property="BorderColorHighlight" Value="{DynamicResource ColorObject3}"/>
         <Setter Property="Template">
             <Setter.Value>
-                <ControlTemplate TargetType="local:MyTextBox">
+                <ControlTemplate TargetType="{x:Type local:MyTextBox}">
                     <Grid SnapsToDevicePixels="True" ToolTip="{TemplateBinding ToolTip}">
                         <Grid.RowDefinitions>
                             <RowDefinition MinHeight="28" />
                             <RowDefinition Height="Auto" />
                         </Grid.RowDefinitions>
-                        <Border x:Name="border" BorderThickness="{TemplateBinding BorderThickness}" BorderBrush="{TemplateBinding BorderBrush}" Background="{TemplateBinding Background}" CornerRadius="3">
+                        <Border x:Name="PART_Border" BorderThickness="{TemplateBinding BorderThickness}" BorderBrush="{TemplateBinding BorderBrush}" Background="{TemplateBinding Background}" CornerRadius="3">
                             <ScrollViewer x:Name="PART_ContentHost" RenderOptions.ClearTypeHint="Enabled" BorderThickness="0"
                    Margin="5,0,0,0" Cursor="IBeam" />
                             <!-- 由于未知原因，TextView 会有 2,0 的 Margin -->
                         </Border>
                         <Border Margin="{TemplateBinding Padding}" IsHitTestVisible="False" HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}" VerticalAlignment="{TemplateBinding VerticalContentAlignment}" BorderThickness="0">
-                            <TextBlock x:Name="labHint" Foreground="{DynamicResource ColorBrushGray4}" Margin="7,0,0,0" Padding="{TemplateBinding BorderThickness}" FontSize="{TemplateBinding FontSize}" FontFamily="Resources/#PCL English, Microsoft YaHei UI" Text="{TemplateBinding Hint}"/>
+                            <TextBlock x:Name="PART_Hint" Foreground="{DynamicResource ColorBrushGray4}" Margin="7,0,0,0" Padding="{TemplateBinding BorderThickness}" FontSize="{TemplateBinding FontSize}" FontFamily="Resources/#PCL English, Microsoft YaHei UI" Text="{TemplateBinding Hint}"/>
                         </Border>
                     </Grid>
                 </ControlTemplate>
@@ -172,12 +176,13 @@
                                 <Grid Height="30" Grid.Row="0" x:Name="PART_Title">
                                     <TextBlock
                                 HorizontalAlignment="Left"
+                                        x:Name="PART_TitleBlock"
                                 VerticalAlignment="Top"
                                 Margin="10,7,0,0"
                                 FontWeight="Bold"
                                 FontSize="13" Text="{TemplateBinding Title}"
-                                Foreground="{TemplateBinding Foreground}"
                                 IsHitTestVisible="False"/>
+
                                     <Path HorizontalAlignment="Right" x:Name="PART_Arrow"
                                 Height="6"
                                 Width="10"
@@ -185,9 +190,9 @@
                                 VerticalAlignment="Top"
                                 Margin="0,12,11,0"
                                 Data="M2,4 l-2,2 10,10 10,-10 -2,-2 -8,8 -8,-8 z"
-                                Fill="{TemplateBinding Foreground}"
                                 RenderTransformOrigin="0.5,0.5"
                                 RenderTransform="{TemplateBinding BtnRotate}"/>
+
 
                                     <Button Opacity="0" x:Name="PART_BtnSwap" Margin="-5,-5,-5,0"/>
                                 </Grid>
@@ -307,9 +312,8 @@
                 <ControlTemplate TargetType="{x:Type local:MyButton}">
                     <Border Background="Transparent">
                         <Border CornerRadius="3" BorderThickness="1" RenderTransformOrigin="0.5,0.5" x:Name="PART_Border">
-                            <TextBlock HorizontalAlignment="Center" VerticalAlignment="Center" Text="{TemplateBinding Text}" Padding="{TemplateBinding TextPadding}"
-                                       x:Name="PART_TextBlock">
-                            </TextBlock>
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" Content="{TemplateBinding Content}" Margin="{TemplateBinding ContentPadding}">
+                            </ContentPresenter>
                         </Border>
                     </Border>
                 </ControlTemplate>
@@ -334,21 +338,6 @@
         </Style.Triggers>
     </Style>
 
-
-    <Style TargetType="{x:Type page:MyLaunchButton}">
-        <Setter Property="Scale" Value="1"/>
-        <Setter Property="Template">
-            <Setter.Value>
-                <ControlTemplate TargetType="page:MyLaunchButton">
-                    <Border Background="Transparent">
-                        <Border CornerRadius="3" BorderThickness="1" Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding Foreground}" RenderTransformOrigin="0.5,0.5" RenderTransform="{TemplateBinding ScaleTransform}">
-                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" Content="{TemplateBinding Content}"/>
-                        </Border>
-                    </Border>
-                </ControlTemplate>
-            </Setter.Value>
-        </Setter>
-    </Style>
 
     <Style TargetType="{x:Type local:MyRadioButton}">
         <Setter Property="Logo" Value=""/>
@@ -387,41 +376,49 @@
     </Style>
 
     <Style TargetType="{x:Type local:MyIconButton}">
+        <Setter Property="ColorType" Value="Color"/>
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="{x:Type local:MyIconButton}">
                     <Border CornerRadius="1000" Background="Transparent">
-                        <Path Stretch="Uniform" Margin="5" RenderTransformOrigin="0.5,0.5" Data="{TemplateBinding Logo}"
-                      RenderTransform="{TemplateBinding ScaleTransform}" Fill="{TemplateBinding Foreground}"/>
-
+                        <Path Stretch="Uniform" Margin="5" RenderTransformOrigin="0.5,0.5" Data="{TemplateBinding Logo}" x:Name="PART_Logo"/>
                     </Border>
                 </ControlTemplate>
             </Setter.Value>
         </Setter>
+        <Style.Triggers>
+            <Trigger Property="ColorType" Value="Color">
+                <Setter Property="ForeColorNormal" Value="{DynamicResource ColorObject4}"/>
+                <Setter Property="ForeColorHighlight" Value="{DynamicResource ColorObject2}"/>
+            </Trigger>
+            <Trigger Property="ColorType" Value="Black">
+                <Setter Property="ForeColorNormal" Value="{DynamicResource ColorObjectGray3}"/>
+                <Setter Property="ForeColorHighlight" Value="{DynamicResource ColorObjectGray1}"/>
+            </Trigger>
+            <Trigger Property="ColorType" Value="Red">
+                <Setter Property="ForeColorNormal" Value="{DynamicResource ColorObjectRedLight}"/>
+                <Setter Property="ForeColorHighlight" Value="{DynamicResource ColorObjectRedDark}"/>
+            </Trigger>
+        </Style.Triggers>
     </Style>
 
-    <Style TargetType="local:MyComboBox">
+    <Style TargetType="{x:Type local:MyComboBox}">
         <Setter Property="OverridesDefaultStyle" Value="True" />
         <Setter Property="SnapsToDevicePixels" Value="True" />
-        <Setter Property="Foreground">
-            <Setter.Value>
-                <SolidColorBrush Color="{DynamicResource ColorObject1}"/>
-            </Setter.Value>
-        </Setter>
-        <Setter Property="Background">
-            <Setter.Value>
-                <SolidColorBrush Color="{DynamicResource ColorObjectHalfWhite}"/>
-            </Setter.Value>
-        </Setter>
         <Setter Property="FocusVisualStyle" Value="{x:Null}" />
         <Setter Property="FontSize" Value="13" />
         <Setter Property="MaxDropDownHeight" Value="175" />
+        <Setter Property="PopupBackground" Value="#DDFFFFFF"/>
+        <Setter Property="BorderColorNormal" Value="{DynamicResource ColorObjectBg0}"/>
+        <Setter Property="BorderColorHighlight" Value="{DynamicResource ColorObject3}"/>
+        <Setter Property="BackColorNormal" Value="{DynamicResource ColorObjectHalfWhite}"/>
+        <Setter Property="BackColorSelect" Value="{DynamicResource ColorObject7}"/>
         <Setter Property="Template">
             <Setter.Value>
-                <ControlTemplate TargetType="ComboBox">
+                <ControlTemplate TargetType="{x:Type local:MyComboBox}">
                     <Grid>
-                        <Border x:Name="border" Background="{TemplateBinding Background}" CornerRadius="3" BorderThickness="1" BorderBrush="{TemplateBinding BorderBrush}" />
-                        <ToggleButton Margin="0,0,1.5,0" Foreground="{TemplateBinding BorderBrush}" IsTabStop="False" SnapsToDevicePixels="False" Focusable="False" IsChecked="{Binding IsDropDownOpen,Mode=TwoWay,RelativeSource={RelativeSource TemplatedParent}}" ClickMode="Press" />
+                        <Border x:Name="PART_Border" CornerRadius="3" BorderThickness="1"/>
+                        <ToggleButton Margin="0,0,1.5,0" Foreground="{Binding BorderBrush,ElementName=PART_Border}" IsTabStop="False" SnapsToDevicePixels="False" Focusable="False" IsChecked="{Binding IsDropDownOpen,Mode=TwoWay,RelativeSource={RelativeSource TemplatedParent}}" ClickMode="Press" />
                         <ContentPresenter x:Name="PART_Content" Margin="8.5,0,21.5,0" IsHitTestVisible="False" VerticalAlignment="Center"
                   Content="{TemplateBinding SelectionBoxItem}" 
                   ContentTemplate="{TemplateBinding SelectionBoxItemTemplate}" 
@@ -429,7 +426,7 @@
                         <Popup x:Name="PART_Popup" SnapsToDevicePixels="True" VerticalOffset="-1.5" AllowsTransparency="True" IsOpen="{Binding IsDropDownOpen, Mode=TwoWay, RelativeSource={RelativeSource TemplatedParent}}" Placement="Bottom" PopupAnimation="Fade">
                             <Grid x:Name="PanPopup">
                                 <!--<Border Background="White" CornerRadius="3" />-->
-                                <Border x:Name="dropDownBorder" CornerRadius="3" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="1" Width="{TemplateBinding Width}" MaxHeight="{TemplateBinding MaxDropDownHeight}" Background="#DDffffff">
+                                <Border x:Name="dropDownBorder" CornerRadius="3" BorderBrush="{Binding BorderBrush,ElementName=PART_Border}" BorderThickness="1" Width="{Binding ActualWidth, RelativeSource={RelativeSource TemplatedParent}}" MaxHeight="{TemplateBinding MaxDropDownHeight}" Background="{TemplateBinding PopupBackground}">
                                     <local:MyScrollViewer x:Name="DropDownScrollViewer" PanningMode="VerticalOnly" SnapsToDevicePixels="False" ScrollViewer.CanContentScroll="False" VerticalScrollBarVisibility="Auto" StepDelta="0.411">
                                         <ItemsPresenter x:Name="ItemsPresenter" KeyboardNavigation.DirectionalNavigation="Contained" />
                                     </local:MyScrollViewer>
@@ -452,14 +449,14 @@
                     <Setter.Value>
                         <ControlTemplate TargetType="{x:Type local:MyComboBox}">
                             <Grid>
-                                <Border x:Name="border" Background="{TemplateBinding Background}" CornerRadius="3" BorderThickness="1" BorderBrush="{TemplateBinding BorderBrush}" />
-                                <ToggleButton Margin="0,0,1.5,0" Foreground="{TemplateBinding BorderBrush}" IsTabStop="False" SnapsToDevicePixels="False" Focusable="False" IsChecked="{Binding IsDropDownOpen,Mode=TwoWay,RelativeSource={RelativeSource TemplatedParent}}" ClickMode="Press" />
-                                <local:MyTextBox x:Name="PART_EditableTextBox" BorderThickness="0" Margin="1.5,0,21.5,0" Padding="0" Background="{x:Null}" VerticalAlignment="Center" Hint="{TemplateBinding Hint}"/>
+                                <Border x:Name="PART_Border" CornerRadius="3" BorderThickness="1"/>
+                                <ToggleButton Margin="0,0,1.5,0" Foreground="{Binding BorderBrush,ElementName=PART_Border}" IsTabStop="False" SnapsToDevicePixels="False" Focusable="False" IsChecked="{Binding IsDropDownOpen,Mode=TwoWay,RelativeSource={RelativeSource TemplatedParent}}" ClickMode="Press" />
+                                <local:MyTextBox x:Name="PART_EditableTextBox" BackColorNormal="Transparent" BackColorSelect="Transparent" BorderThickness="0" Margin="1.5,0,21.5,0" Padding="0" VerticalAlignment="Center" Hint="{TemplateBinding Hint}"/>
                                 <Popup x:Name="PART_Popup" SnapsToDevicePixels="True" VerticalOffset="-1.5" AllowsTransparency="True" IsOpen="{Binding IsDropDownOpen, Mode=TwoWay, RelativeSource={RelativeSource TemplatedParent}}" Placement="Bottom" PopupAnimation="Fade"
                        Width="{TemplateBinding Width}">
                                     <Grid x:Name="PanPopup">
                                         <!--<Border Background="White" CornerRadius="3" />-->
-                                        <Border x:Name="dropDownBorder" SnapsToDevicePixels="False" CornerRadius="3" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="1" Width="{TemplateBinding Width}" MaxHeight="{TemplateBinding MaxDropDownHeight}" Background="#DDffffff">
+                                        <Border x:Name="dropDownBorder" SnapsToDevicePixels="False" CornerRadius="3" BorderBrush="{Binding BorderBrush,ElementName=PART_Border}" BorderThickness="1" Width="{TemplateBinding Width}" MaxHeight="{TemplateBinding MaxDropDownHeight}" Background="#DDffffff">
                                             <local:MyScrollViewer x:Name="DropDownScrollViewer" ScrollViewer.CanContentScroll="False" VerticalScrollBarVisibility="Auto" StepDelta="0.42">
                                                 <ItemsPresenter x:Name="ItemsPresenter" KeyboardNavigation.DirectionalNavigation="Contained" />
                                             </local:MyScrollViewer>

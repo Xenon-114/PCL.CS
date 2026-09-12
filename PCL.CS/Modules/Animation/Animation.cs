@@ -90,6 +90,18 @@ namespace PCL.CS.Modules
             Dispatcher = Dispatcher.CurrentDispatcher;
             IsRunning = true;
             Base.RunInNewThread(AniThread, "Animation", ThreadPriority.AboveNormal);
+
+            //Stopwatch Watch = Stopwatch.StartNew();
+            //TimeSpan RunTime = TimeSpan.Zero;
+            //TimeSpan TickTime;
+
+            //CompositionTarget.Rendering += async (s, e) =>
+            //{
+            //    var Time = Watch.Elapsed;
+            //    TickTime = Time - RunTime;
+            //    RunTime = Time;
+            //    AniLoop(TickTime);
+            //};
         }
 
         public static void StopThread()
@@ -118,7 +130,7 @@ namespace PCL.CS.Modules
         private static int Counter = 0;
         private static bool AniLoop(TimeSpan Tick)
         {
-            if (Counter >= 40)
+            if (Counter >= 400)
             {
                 Base.Log($"当前运行动画数量：{AnimationRunTime.Count}");
                 Counter = 0;

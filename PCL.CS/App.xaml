@@ -8,6 +8,7 @@
     <Application.Resources>
         <ResourceDictionary>
             <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="/Resources/Font/FontFamily.xaml"/>
                 <ResourceDictionary Source="/Colors.xaml"/>
                 <ResourceDictionary Source="/Controls/ControlTheme.xaml"/>
                 <ResourceDictionary Source="/ImageResources.xaml"/>

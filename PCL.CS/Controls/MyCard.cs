@@ -7,7 +7,10 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Data;
 using System.Windows.Media;
+using System.Windows.Shapes;
+using XeF4Core.WPF;
 
 namespace PCL.CS.Controls
 {
@@ -63,7 +66,7 @@ namespace PCL.CS.Controls
 
         private UIElement PART_Title { get; set; }
 
-        private UIElement Arrow { get; set; }
+        private Path Arrow { get; set; }
 
         #region 主刷新逻辑
         private double _ContentHeight;
@@ -159,25 +162,24 @@ namespace PCL.CS.Controls
         {
             base.OnApplyTemplate();
             MyBorder BackBorder = GetTemplateChild("PART_BackBorder") as MyBorder;
-            var Des = DependencyPropertyDescriptor.FromProperty(MyBorder.BorderColorProperty, typeof(MyBorder));
-            Des.AddValueChanged(BackBorder, (s, e) =>
-            {
-                var Foreground = this.Foreground as SolidColorBrush;
-                if (Foreground is null || Foreground.IsFrozen) this.Foreground = Foreground = new SolidColorBrush();
-                Foreground.Color = (s as MyBorder).BorderColor;
-            });
+            var Foreground = new SolidColorBrush();
+            Foreground.SetBinding(SolidColorBrush.ColorProperty, new Binding(nameof(MyBorder.BorderColor)) { Source = BackBorder, UpdateSourceTrigger = UpdateSourceTrigger.PropertyChanged, Mode = BindingMode.OneWay });
             ContentPre = GetTemplateChild("PART_Content") as ContentPresenter;
             ContentPre.SizeChanged += (s, e) =>
             {
                 if (e.NewSize.Height != e.PreviousSize.Height) ContentSizeChange();
             };
             PART_Title = GetTemplateChild("PART_Title") as UIElement;
+            TextBlock Title = GetTemplateChild("PART_TitleBlock") as TextBlock;
+            Title.Foreground = Foreground;
 
             lock (VisibilityLocker)
             {
-                Arrow = GetTemplateChild("PART_Arrow") as UIElement;
+                Arrow = GetTemplateChild("PART_Arrow") as Path;
                 Arrow.Visibility = ArrowVisibility;
+                Arrow.Fill = Foreground;
             }
+            this.Foreground = Foreground;
             (GetTemplateChild("PART_BtnExpand") as Button).Click += EventUnSwap;
             (GetTemplateChild("PART_BtnSwap") as Button).Click += EventSwap;
         }

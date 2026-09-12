@@ -9,9 +9,9 @@
     <Grid>
         <local:MyScrollViewer x:Name="MainAScrollViewer">
             <StackPanel x:Name="MainScrollViewer">
-                <local:MyButton Height="40" Margin="20,20,150,20" Text="普通按钮"/>
-                <local:MyButton Height="40" Margin="20,0,20,20" Text="高亮按钮" ColorType="Highlight"/>
-                <local:MyButton Height="40" Margin="20,0,20,20" Text="红色按钮" ColorType="Red" Click="MyButton_Click"/>
+                <local:MyButton Height="40" Margin="20,20,150,20" Content="普通按钮"/>
+                <local:MyButton Height="40" Margin="20,0,20,20" Content="高亮按钮" ColorType="Highlight"/>
+                <local:MyButton Height="40" Margin="20,0,20,20" Content="红色按钮" ColorType="Red" Click="MyButton_Click"/>
                 <local:MyCard Margin="20,0,20,20" Title="卡片" CanSwap="True">
                     <TextBlock Text="折叠卡片里可以放内容"/>
                 </local:MyCard>
@@ -57,7 +57,8 @@
                         <local:MyButton Height="40" Grid.Column="0" ColorType="Highlight" Margin="10"/>
                         <local:MyButton Height="40" Grid.Column="0" ColorType="Highlight" Margin="10"/>
                         <local:MyButton Height="40" Grid.Column="0" ColorType="Highlight" Margin="10"/>
-                        <local:MyTextBox Hint="abc"/>
+                        <local:MyImage Source="{DynamicResource Image.Icon.svg}"/>
+                        <local:MyTextBox Hint="abc" IsEnabled="False"/>
                         <local:MyListItem Height="50" AutoCheck="True"/>
                     </StackPanel>
                 </local:MyCard>

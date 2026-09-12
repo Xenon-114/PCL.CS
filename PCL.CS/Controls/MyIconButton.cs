@@ -7,67 +7,77 @@ using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Data;
+using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Shapes;
+using XeF4Core.WPF;
 
 namespace PCL.CS.Controls
 {
-    public class MyIconButton:Control,IMyButton
+    public class MyIconButton:Control
     {
-        public double Scale
-        {
-            get => (double)GetValue(ScaleProperty);
-            set => SetValue(ScaleProperty, value);
-        }
-        public static readonly DependencyProperty ScaleProperty = DependencyProperty.Register("Scale", typeof(double), typeof(MyIconButton),
-            new PropertyMetadata((d, e) => (d as MyIconButton).LogoScaleRefresh()));
-
-        public ScaleTransform ScaleTransform
-        {
-            get => (ScaleTransform)GetValue(ScaleTransformProperty);
-            set => SetValue(ScaleTransformProperty, value);
-        }
-        public static readonly DependencyProperty ScaleTransformProperty = DependencyProperty.Register("ScaleTransform", typeof(ScaleTransform), typeof(MyIconButton));
-
         public Geometry Logo
         {
             get => (Geometry)GetValue(LogoProperty);
             set => SetValue(LogoProperty, value);
         }
-        public static readonly DependencyProperty LogoProperty=DependencyProperty.Register("Logo",typeof(Geometry), typeof(MyIconButton));
+        public static readonly DependencyProperty LogoProperty = DependencyProperty.Register("Logo", typeof(Geometry), typeof(MyIconButton));
 
         public double LogoScale
         {
             get => (double)GetValue(LogoScaleProperty);
             set => SetValue(LogoScaleProperty, value);
         }
-        public static readonly DependencyProperty LogoScaleProperty = DependencyProperty.Register("LogoScale", typeof(double), typeof(MyIconButton)
-            , new PropertyMetadata((d, e) => (d as MyIconButton).LogoScaleRefresh()));
+        public static readonly DependencyProperty LogoScaleProperty = DependencyProperty.Register("LogoScale", typeof(double), typeof(MyIconButton));
 
-        private void LogoScaleRefresh()
+
+
+        public double Scale
         {
-            ScaleTransform.ScaleX = LogoScale * Scale;
-            ScaleTransform.ScaleY = LogoScale * Scale;
+            get { return (double)GetValue(ScaleProperty); }
+            set { SetValue(ScaleProperty, value); }
         }
+
+        // Using a DependencyProperty as the backing store for Scale.  This enables animation, styling, binding, etc...
+        public static readonly DependencyProperty ScaleProperty =
+            DependencyProperty.Register(nameof(Scale), typeof(double), typeof(MyIconButton), new PropertyMetadata(1.0));
+
+
+
+
+        public Color ForeColorNormal
+        {
+            get { return (Color)GetValue(ForeColorNormalProperty); }
+            set { SetValue(ForeColorNormalProperty, value); }
+        }
+
+        // Using a DependencyProperty as the backing store for ForeColorNormal.  This enables animation, styling, binding, etc...
+        public static readonly DependencyProperty ForeColorNormalProperty =
+            DependencyProperty.Register(nameof(ForeColorNormal), typeof(Color), typeof(MyIconButton));
+
+
+        public Color ForeColorHighlight
+        {
+            get { return (Color)GetValue(ForeColorHighlightProperty); }
+            set { SetValue(ForeColorHighlightProperty, value); }
+        }
+
+        // Using a DependencyProperty as the backing store for ForeColorHighlight.  This enables animation, styling, binding, etc...
+        public static readonly DependencyProperty ForeColorHighlightProperty =
+            DependencyProperty.Register(nameof(ForeColorHighlight), typeof(Color), typeof(MyIconButton));
+
+
 
         public Color ForeColor
         {
-            get => (Color)GetValue(ForeColorProperty);
-            set => SetValue(ForeColorProperty, value);
-        }
-        public static readonly DependencyProperty ForeColorProperty = DependencyProperty.Register("ForeColor", typeof(Color), typeof(MyIconButton));
-
-
-
-        public double ForeAnimValue
-        {
-            get { return (double)GetValue(ForeAnimValueProperty); }
-            set { SetValue(ForeAnimValueProperty, value); }
+            get { return (Color)GetValue(ForeColorProperty); }
+            set { SetValue(ForeColorProperty, value); }
         }
 
-        // Using a DependencyProperty as the backing store for ForeAnimValue.  This enables animation, styling, binding, etc...
-        public static readonly DependencyProperty ForeAnimValueProperty =
-            DependencyProperty.Register(nameof(ForeAnimValue), typeof(double), typeof(MyIconButton), new PropertyMetadata(0.6));
+        // Using a DependencyProperty as the backing store for ForeColor.  This enables animation, styling, binding, etc...
+        public static readonly DependencyProperty ForeColorProperty =
+            DependencyProperty.Register(nameof(ForeColor), typeof(Color), typeof(MyIconButton));
+
 
 
 
@@ -78,113 +88,125 @@ namespace PCL.CS.Controls
             Red,
             Custom
         }
+
+
         public ColorState ColorType
         {
-            get => _ColorType;
-            set
-            {
-                _ColorType = value;
-                ColorUpdate();
-            }
+            get { return (ColorState)GetValue(ColorTypeProperty); }
+            set { SetValue(ColorTypeProperty, value); }
         }
-        private ColorState _ColorType = ColorState.Color;
+
+        // Using a DependencyProperty as the backing store for ColorType.  This enables animation, styling, binding, etc...
+        public static readonly DependencyProperty ColorTypeProperty =
+            DependencyProperty.Register(nameof(ColorType), typeof(ColorState), typeof(MyIconButton));
+
+
 
         private void ColorUpdate()
         {
             if (!this.IsEnabled)
             {
-                this.SetResourceReference(ColorNormalProperty, "ColorObjectGray3");
-                this.OpacTo(0.6, 300);
+                this.OpacTo(0, 300);
+                UnEnableTo(1, 300);
                 return;
-            }
-            switch (ColorType)
-            {
-                case ColorState.Black:
-                    this.SetResourceReference(ColorNormalProperty, "ColorObject1");
-                    break;
-                case ColorState.Color:
-                    this.SetResourceReference(ColorNormalProperty, "ColorObject3");
-                    break;
-                case ColorState.Red:
-                    this.SetResourceReference(ColorNormalProperty, "ColorObjectRedLight");
-                    break;
-                default:
-                    this.SetBinding(ColorNormalProperty, new Binding("ForeColor") { Source = this });
-                    break;
             }
             double Opac;
             double Time;
             if (this.IsMouseOver)
             {
-                Opac = 0.8;
+                Opac = 1;
                 Time = 120;
             }
             else
             {
-                Opac = 0.6;
+                Opac = 0;
                 Time = 150;
             }
             OpacTo(Opac, Time);
+            UnEnableTo(0, 300);
         }
-
-        public Color ColorNormal
+        private void OpacTo(double Opac,double Time)
         {
-            get { return (Color)GetValue(ColorNormalProperty); }
-            set { SetValue(ColorNormalProperty, value); }
+            new DoubleAnimation(MainMixer, ColorMixer.ColorARatioProperty, MainMixer.ColorARatio, Opac, Time).StartAnimation();
         }
-
-        // Using a DependencyProperty as the backing store for ColorNormal.  This enables animation, styling, binding, etc...
-        public static readonly DependencyProperty ColorNormalProperty =
-            DependencyProperty.Register(nameof(ColorNormal), typeof(Color), typeof(MyIconButton));
+        private void UnEnableTo(double val, double Time) =>
+            new DoubleAnimation(FinalMixer, ColorMixer.ColorARatioProperty, FinalMixer.ColorARatio, val, Time).StartAnimation();
 
 
 
-        private ColorMixer MainMixer;
+        private readonly ColorMixer MainMixer;
+        private readonly ColorMixer FinalMixer;
         public MyIconButton()
         {
-            ScaleTransform = new ScaleTransform();
-            Scale = 1;
             LogoScale = 1;
-
-            ColorUpdate();
-            this.Foreground = new SolidColorBrush();
             MainMixer = new ColorMixer();
-            MainMixer.SetBinding(ColorMixer.ColorAProperty, new Binding("ColorNormal") { Source = this });
-            MainMixer.ColorB = Colors.White;
-            MainMixer.SetBinding(ColorMixer.ColorARatioProperty, new Binding("ForeAnimValue") { Source = this, UpdateSourceTrigger = UpdateSourceTrigger.PropertyChanged });
-            BindingOperations.SetBinding(this.Foreground, SolidColorBrush.ColorProperty, new Binding("ColorResult") { Source = MainMixer });
-
-            this.MouseEnter += (s, e) => ColorUpdate();
-            this.MouseLeave += (s, e) =>
+            FinalMixer = new ColorMixer();
+            OnInit();
+            this.IsEnabledChanged += (s, e) =>
             {
-                ColorUpdate();
-                IsMouseDown = false;
-                ScaleTo(1.0, 250, new AniEaseOutFluent(2));
-            };
-            this.MouseLeftButtonDown += (s, e) =>
-            {
-                if (!this.IsEnabled) return;
-                IsMouseDown = true;
-                ScaleTo(0.9, 200, new AniEaseOutFluent(5));
-            };
-            this.MouseLeftButtonUp += (s, e) =>
-            {
-                if (!this.IsEnabled) return;
-                if (!IsMouseDown) return;
-                IsMouseDown = false;
-                RaiseEvent(new RoutedEventArgs(ClickEvent));
                 ScaleTo(1.0, 200, new AniEaseOutFluent(2));
+                ColorUpdate();
             };
+        }
+        private void OnInit()
+        {
+            MainMixer.SetBinding(ColorMixer.ColorBProperty, new Binding(nameof(ForeColorNormal)) { Source = this, UpdateSourceTrigger = UpdateSourceTrigger.PropertyChanged, Mode = BindingMode.OneWay });
+            MainMixer.SetBinding(ColorMixer.ColorAProperty, new Binding(nameof(ForeColorHighlight)) { Source = this, UpdateSourceTrigger = UpdateSourceTrigger.PropertyChanged, Mode = BindingMode.OneWay });
+            FinalMixer.SetBinding(ColorMixer.ColorBProperty, new Binding(nameof(ColorMixer.ColorResult)) { Source = MainMixer, UpdateSourceTrigger = UpdateSourceTrigger.PropertyChanged, Mode = BindingMode.OneWay });
+            FinalMixer.SetResourceReference(ColorMixer.ColorAProperty, "ColorObjectGray3");
+            this.SetBinding(ForeColorProperty, new Binding(nameof(ColorMixer.ColorResult)) { Source = FinalMixer, UpdateSourceTrigger = UpdateSourceTrigger.PropertyChanged, Mode = BindingMode.OneWay });
+        }
+        private bool IsMouseDown = false;
 
-            this.IsEnabledChanged += (s, e) => ColorUpdate();
+        public override void OnApplyTemplate()
+        {
+            base.OnApplyTemplate();
+            var PathLogo = Template.FindName("PART_Logo", this) as Path;
+            var TransGroup = new TransformGroup();
+            var LogoScale = new ScaleTransform();
+            var LogoScaleBinding = new Binding(nameof(this.LogoScale)) { Source = this, UpdateSourceTrigger = UpdateSourceTrigger.PropertyChanged, Mode = BindingMode.OneWay };
+            LogoScale.SetBinding(ScaleTransform.ScaleXProperty, LogoScaleBinding);
+            LogoScale.SetBinding(ScaleTransform.ScaleYProperty, LogoScaleBinding);
+            TransGroup.Children.Add(LogoScale);
+            var AnimScale = new ScaleTransform();
+            var AnimScaleBinding = new Binding(nameof(Scale)) { Source = this, UpdateSourceTrigger = UpdateSourceTrigger.PropertyChanged, Mode = BindingMode.OneWay };
+            AnimScale.SetBinding(ScaleTransform.ScaleXProperty, AnimScaleBinding);
+            AnimScale.SetBinding(ScaleTransform.ScaleYProperty, AnimScaleBinding);
+            TransGroup.Children.Add(AnimScale);
+            PathLogo.RenderTransform = TransGroup;
+            var Fill = new SolidColorBrush();
+            Fill.SetBinding(SolidColorBrush.ColorProperty, new Binding(nameof(ColorMixer.ColorResult)) { Source = FinalMixer, UpdateSourceTrigger = UpdateSourceTrigger.PropertyChanged, Mode = BindingMode.OneWay });
+            PathLogo.Fill = Fill;
         }
 
-        private bool IsMouseDown = false;
-        
 
-        private void OpacTo(double TargetOpac,double Time)
+        protected override void OnMouseEnter(MouseEventArgs e)
         {
-            Animation.Start(new DoubleAnimation(this, ForeAnimValueProperty, this.ForeAnimValue, TargetOpac, Time, 0));
+            base.OnMouseEnter(e);
+            ColorUpdate();
+        }
+        protected override void OnMouseLeave(MouseEventArgs e)
+        {
+            base.OnMouseLeave(e);
+            ColorUpdate();
+            IsMouseDown = false;
+            ScaleTo(1.0, 200, new AniEaseOutFluent(2));
+        }
+        protected override void OnMouseLeftButtonDown(MouseButtonEventArgs e)
+        {
+            base.OnMouseLeftButtonDown(e);
+            if (!this.IsEnabled) return;
+            IsMouseDown = true;
+            ScaleTo(0.9, 200, new AniEaseOutFluent(5));
+        }
+        protected override void OnMouseLeftButtonUp(MouseButtonEventArgs e)
+        {
+            base.OnMouseLeftButtonUp(e);
+            if (!this.IsEnabled) return;
+            if (!IsMouseDown) return;
+            IsMouseDown = false;
+            RaiseEvent(new RoutedEventArgs(ClickEvent));
+            ScaleTo(1.0, 200, new AniEaseOutFluent(2));
         }
 
         private Animation ScaleAnim;
@@ -200,7 +222,7 @@ namespace PCL.CS.Controls
             Animation.Start(ScaleAnim);
         }
 
-        public static readonly RoutedEvent ClickEvent = MyButton.ClickEvent;
+        public static readonly RoutedEvent ClickEvent = Button.ClickEvent;
         public event RoutedEventHandler Click
         {
             add => AddHandler(ClickEvent, value);

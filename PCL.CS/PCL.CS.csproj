@@ -25,9 +25,13 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Compile Remove="Resource\**" />
     <Compile Remove="Tools\**" />
+    <EmbeddedResource Remove="Resource\**" />
     <EmbeddedResource Remove="Tools\**" />
+    <None Remove="Resource\**" />
     <None Remove="Tools\**" />
+    <Page Remove="Resource\**" />
     <Page Remove="Tools\**" />
   </ItemGroup>
 
@@ -46,8 +50,12 @@
     <None Remove="Image\Blocks\RedstoneBlock.png" />
     <None Remove="Image\Blocks\RedstoneLampOff.png" />
     <None Remove="Image\Blocks\RedstoneLampOn.png" />
+    <None Remove="Image\Icon.svg" />
     <None Remove="Image\Icons\Disabled.png" />
     <None Remove="Image\Icons\NoIcon.png" />
+    <None Remove="Resources\Font\HarmonyOS_Sans_Bold.ttf" />
+    <None Remove="Resources\Font\HarmonyOS_Sans_Medium.ttf" />
+    <None Remove="Resources\Font\HarmonyOS_Sans_Regular.ttf" />
   </ItemGroup>
 
   <ItemGroup>
@@ -64,7 +72,8 @@
     <EmbeddedResource Include="Image\Blocks\RedstoneBlock.png" />
     <EmbeddedResource Include="Image\Blocks\RedstoneLampOff.png" />
     <EmbeddedResource Include="Image\Blocks\RedstoneLampOn.png" />
-    <Resource Include="Image\icon.ico" />
+    <EmbeddedResource Include="Image\Icon.svg" />
+    <EmbeddedResource Include="Image\icon.ico" />
     <EmbeddedResource Include="Image\Icons\Disabled.png" />
     <EmbeddedResource Include="Image\Icons\NoIcon.png" />
   </ItemGroup>
@@ -84,13 +93,21 @@
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
-    <PackageReference Include="System.Security.Cryptography.ProtectedData" Version="10.0.10" />
+    <PackageReference Include="Imazen.WebP" Version="11.0.0" />
+    <PackageReference Include="SharpVectors.Wpf" Version="1.8.6" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Resource Include="Resources\Font\HarmonyOS_Sans_Bold.ttf" />
+    <Resource Include="Resources\Font\HarmonyOS_Sans_Medium.ttf" />
+    <Resource Include="Resources\Font\HarmonyOS_Sans_Regular.ttf" />
   </ItemGroup>
 
   <PropertyGroup>
     <!-- 定义工具路径和参数 -->
     <ImageGenTool>$(MSBuildProjectDirectory)\Tools\ImageGenBuilder.exe</ImageGenTool>
     <ProjectPath>$(MSBuildProjectDirectory)</ProjectPath>
+    <UserSecretsId>c8133da2-5fb0-4ec1-8cba-a64249ee03ee</UserSecretsId>
   </PropertyGroup>
   <Target Name="GenerateImagesXaml" BeforeTargets="BeforeBuild" Condition="Exists('$(ImageGenTool)')">
     <!-- 运行小工具，参数用空格分隔 -->

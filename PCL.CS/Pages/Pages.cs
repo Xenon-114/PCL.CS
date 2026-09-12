@@ -25,8 +25,8 @@ namespace PCL.CS.Pages
         }
 
         public static List<MyPageTemplate> Pages = new List<MyPageTemplate>();
-        private static Stack<int> PagesStack = new Stack<int>();
-        public static int PageIndex { get { return PagesStack.Peek(); } }
+        private static readonly Stack<int> PagesStack = new Stack<int>();
+        public static int PageIndex => PagesStack.Count > 0 ? PagesStack.Peek() : 0;
         public static event EventHandler<int> OnPageChanged;
         /// <summary>
         /// 更改页面
@@ -52,6 +52,24 @@ namespace PCL.CS.Pages
                 PagesStack.Push(Index);
             }
         }
+        private static void ChangePageNoStack(int Index)
+        {
+            if (Index > Pages.Count) return;
+            MyPageTemplate Page = Pages[Index];
+            OnPageChanged?.Invoke(null, Index);
+            Main.MainWnd.ChangePageLeft(Page.PageLeft);
+            Base.Log($"更改页面，索引：{Index}");
+            Main.MainWnd.ChangePageRight(Page.PageRight[Page.PgRightIndex]);
+            if (Page.IsSubPage)
+            {
+                Main.MainWnd.TitleLeftChange(true, Page.Title);
+            }
+            else
+            {
+                Main.MainWnd.TitleLeftChange(false, "");
+                PagesStack.Clear();
+            }
+        }
         /// <summary>
         /// 单独更改右页面（用于切换） 若输入了过大或过小的索引编号，就会引发异常
         /// </summary>
@@ -60,7 +78,7 @@ namespace PCL.CS.Pages
         public static void ChangePageRight(int Index)
         {
             if (Index <= 0) throw new IndexOutOfRangeException("页面索引不可为负");
-            MyPageTemplate Page = Pages[PagesStack.Peek()];
+            MyPageTemplate Page = Pages[PageIndex];
             if (Index == Page.PgRightIndex) return;
             if (Index >= Page.PageRight.Count) throw new IndexOutOfRangeException("页面索引超出页面数量");
             Page.PgRightIndex = Index;
@@ -73,7 +91,7 @@ namespace PCL.CS.Pages
         /// <param name="RefreshRight">是否刷新右页面</param>
         public static void Refresh(bool RefreshLeft = false, bool RefreshRight = true)
         {
-            MyPageTemplate Page = Pages[PagesStack.Peek()];
+            MyPageTemplate Page = Pages[PageIndex];
             if (RefreshLeft) Main.MainWnd.ChangePageLeft(Page.PageLeft);
             if (RefreshRight) Main.MainWnd.ChangePageRight(Page.PageRight[Page.PgRightIndex]);
         }
@@ -82,11 +100,17 @@ namespace PCL.CS.Pages
         /// </summary>
         public static void PageBack()
         {
+            //Main.Hint($"返回页面栈的上一级，页面栈里还有{PagesStack.Count}个页面");
+            //foreach(var i in PagesStack)
+            //{
+            //    Main.Hint($"页面：{i}");
+            //}
             if (PagesStack.Count > 0)
                 PagesStack.Pop();
-            if (!(PagesStack.Count > 0)) PagesStack.Push(0);
+            if (PagesStack.Count == 0) PagesStack.Push(0);
             int Index = PagesStack.Peek();
-            ChangePage(Index);
+            //Main.Hint($"返回页面栈的上一级：{Index}，页面栈里还有{PagesStack.Count}个页面");
+            ChangePageNoStack(Index);
         }
     }
     public class MyPageTemplate

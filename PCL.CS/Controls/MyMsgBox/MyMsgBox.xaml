@@ -38,9 +38,9 @@
                     </Grid.ColumnDefinitions>
                     <ContentControl x:Name="PanExtraContent" HorizontalAlignment="Left" VerticalAlignment="Center" Grid.Column="0"/>
                     <StackPanel Grid.Column="1" Orientation="Horizontal">
-                        <local:MyButton ColorType="Normal" x:FieldModifier="public" Text="按钮3" x:Name="Btn3" Margin="12,0,0,0" SnapsToDevicePixels="False" Padding="5,0" UseLayoutRounding="False" TextPadding="7"/>
-                        <local:MyButton ColorType="Normal" x:FieldModifier="public" Text="按钮2" x:Name="Btn2" Margin="12,0,0,0" SnapsToDevicePixels="False" Padding="5,0" UseLayoutRounding="False" TextPadding="7"/>
-                        <local:MyButton ColorType="Normal" x:FieldModifier="public" Text="按钮1" x:Name="Btn1" Margin="12,0,0,0" SnapsToDevicePixels="False" Padding="5,0" UseLayoutRounding="False" TextPadding="7"/>
+                        <local:MyButton ColorType="Normal" x:FieldModifier="public" Content="按钮3" x:Name="Btn3" Margin="12,0,0,0" SnapsToDevicePixels="False" Padding="5,0" UseLayoutRounding="False" ContentPadding="7"/>
+                        <local:MyButton ColorType="Normal" x:FieldModifier="public" Content="按钮2" x:Name="Btn2" Margin="12,0,0,0" SnapsToDevicePixels="False" Padding="5,0" UseLayoutRounding="False" ContentPadding="7"/>
+                        <local:MyButton ColorType="Normal" x:FieldModifier="public" Content="按钮1" x:Name="Btn1" Margin="12,0,0,0" SnapsToDevicePixels="False" Padding="5,0" UseLayoutRounding="False" ContentPadding="7"/>
                     </StackPanel>
                 </Grid>
             </Grid>
