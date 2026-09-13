@@ -7,7 +7,7 @@ namespace XeF4Core;
 /// 表示一个值的区间
 /// </summary>
 /// <typeparam name="T"></typeparam>
-public readonly struct ValueRange<T> : IEquatable<ValueRange<T>?> where T : IComparable<T>
+public readonly struct ValueRange<T> : IEquatable<ValueRange<T>> where T : IComparable<T>
 {
     /// <summary>
     /// 下界值
@@ -210,13 +210,12 @@ public readonly struct ValueRange<T> : IEquatable<ValueRange<T>?> where T : ICom
         return false;
     }
     /// <inheritdoc/>
-    public bool Equals(ValueRange<T>? other)
+    public bool Equals(ValueRange<T> other)
     {
-        return other is not null &&
-               EqualityComparer<T?>.Default.Equals(Lower, other.Value.Lower) &&
-               EqualityComparer<T?>.Default.Equals(Upper, other.Value.Upper) &&
-               IsLowerSealed == other.Value.IsLowerSealed &&
-               IsUpperSealed == other.Value.IsUpperSealed;
+        return EqualityComparer<T?>.Default.Equals(Lower, other.Lower) &&
+               EqualityComparer<T?>.Default.Equals(Upper, other.Upper) &&
+               IsLowerSealed == other.IsLowerSealed &&
+               IsUpperSealed == other.IsUpperSealed;
     }
     /// <inheritdoc/>
     public override int GetHashCode()

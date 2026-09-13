@@ -203,7 +203,7 @@ namespace PCL.CS.Modules
                     }
                     if (Anim.TotalTime == TimeSpan.Zero)
                     {
-                        Value = Anim.GetValue(1.0);
+                        Value = Anim.GetValue(Anim.TotalTime);
                         AniRun(Anim, Value);
                         //Anim.OnStop();
                         Stop(Anim);
@@ -214,16 +214,13 @@ namespace PCL.CS.Modules
                     int AnimRepeat = (int)(ActRunTime.TotalMilliseconds / Anim.TotalTime.TotalMilliseconds);
                     if (AnimRepeat >= ARepeat && ARepeat > 0)
                     {
-                        Value = Anim.GetValue(1.0);
+                        Value = Anim.GetValue(Anim.TotalTime);
                         Stop(Anim);
                     }
                     else
                     {
                         double Time = ActRunTime.TotalMilliseconds % Anim.TotalTime.TotalMilliseconds;
-                        double t = Time / Anim.TotalTime.TotalMilliseconds;
-                        if (t < 0) t = 0;
-                        if (t > 1 || t is double.NaN) t = 1;
-                        Value = Anim.GetValue(t);
+                        Value = Anim.GetValue(TimeSpan.FromMilliseconds(Time));
                     }
                     AniRun(Anim, Value);
                 }
@@ -350,7 +347,7 @@ namespace PCL.CS.Modules
         public virtual TimeSpan TotalTime { get; set; }
         public virtual TimeSpan After { get; set; }
         public virtual int Repeat { get; set; }
-        public abstract object GetValue(double t);
+        public abstract object GetValue(TimeSpan t);
         public abstract void SetValue(object value);
         public virtual void OnStart() { }
         public virtual void OnStop() { }
@@ -441,6 +438,13 @@ namespace PCL.CS.Modules
             if (OwnType == PropertyOwnType.None || OwnType == PropertyOwnType.Shared) return;
             if (PropertyOwner.TryGetValue((Object, Property), out var Owner) && Owner == this) PropertyOwner.Remove((Object, Property));
         }
+        public override object GetValue(TimeSpan t)
+        {
+            //Base.Log($"动画帧第{t.Ticks}帧");
+            if (TotalTime == TimeSpan.Zero) return GetValue(1);
+            else return GetValue((double)t.Ticks/TotalTime.Ticks);
+        }
+        public abstract object GetValue(double t);
     }
 
     public class DoubleAnimation : PropertyAnimation
@@ -577,9 +581,9 @@ namespace PCL.CS.Modules
             _MaxTime = Max;
             return Max;
         }
-        public override object GetValue(double t)
+        public override object GetValue(TimeSpan t)
         {
-            TimeSpan RunTime = TimeSpan.FromMilliseconds(t * TotalTime.TotalMilliseconds);
+            TimeSpan RunTime = t;
             ValuePairs.Clear();
             foreach (var Anim in this)
             {
@@ -631,7 +635,7 @@ namespace PCL.CS.Modules
                                 }
                                 {
                                     double Time2 = ActRunTime.TotalMilliseconds - Anim.TotalTime.TotalMilliseconds * Repeat;
-                                    ValuePairs[Anim] = (Anim.GetValue(Time2 / Anim.TotalTime.TotalMilliseconds));
+                                    ValuePairs[Anim] = (Anim.GetValue(TimeSpan.FromMilliseconds(Time2)));
                                 }
                             }
                             break;
@@ -644,12 +648,12 @@ namespace PCL.CS.Modules
                                 else if (RunningState == AnimationRunState.Waiting)
                                 {
                                     Anim.OnStart();
-                                    ValuePairs[Anim] = (Anim.GetValue(1.0));
+                                    ValuePairs[Anim] = (Anim.GetValue(Anim.TotalTime));
                                     ThisTickState = AnimationRunState.Ending;
                                 }
                                 else if (RunningState == AnimationRunState.Running)
                                 {
-                                    ValuePairs[Anim] = (Anim.GetValue(1.0));
+                                    ValuePairs[Anim] = (Anim.GetValue(Anim.TotalTime));
                                     ThisTickState = AnimationRunState.Ending;
                                 }
 

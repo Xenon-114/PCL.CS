@@ -204,7 +204,7 @@ namespace PCL.CS.Controls
                 BackColor = 0;
                 TotalTime = 300;
             }
-            else if (IsDropDownOpen || ((UIElement)Template.FindName("PART_EditableTextBox", this)).IsFocused)
+            else if (IsDropDownOpen || (IsEditable && ((UIElement)Template.FindName("PART_EditableTextBox", this)).IsFocused))
             {
                 BorderOpacity = 1.0;
                 IsUnEnabled = 0;
@@ -304,10 +304,10 @@ namespace PCL.CS.Controls
             else
             {
                 // 无动画
-                time = 0;
+                ColorAnimLenth = 0;
                 SetResourceReference(ForegroundColorProperty, newBackColorName);
             }
-            time = 200;
+            ColorAnimLenth = 200;
         }
     }
 

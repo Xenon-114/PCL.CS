@@ -92,7 +92,6 @@ namespace PCL.CS.Pages
             {
                 var ListItem = new MyRadioBoxItem()
                 {
-                    Height = 40,
                     Title = group.Name,
                     Info = group.MinecraftDirectory.FullName,
                     IsChecked = ReferenceEquals(Minecraft.SelectedGroup, group),

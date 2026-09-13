@@ -187,11 +187,6 @@ public readonly struct Index : IEquatable<Index>
 
 #region HashCode
 
-
-#pragma warning disable CA1066 // Implement IEquatable when overriding Object.Equals
-
-
-
 /// <summary>
 /// 对于对象哈希值的基本操作
 /// </summary>
@@ -588,17 +583,17 @@ public struct HashCode
                 case 1:
                     System.Diagnostics.Debug.Assert(value.Length >= sizeof(int));
                     Add(ToInt32(value));
-                    value = value.Slice(sizeof(int));
+                    value = value[sizeof(int)..];
                     goto case 2;
                 case 2:
                     System.Diagnostics.Debug.Assert(value.Length >= sizeof(int));
                     Add(ToInt32(value));
-                    value = value.Slice(sizeof(int));
+                    value = value[sizeof(int)..];
                     goto case 3;
                 case 3:
                     System.Diagnostics.Debug.Assert(value.Length >= sizeof(int));
                     Add(ToInt32(value));
-                    value = value.Slice(sizeof(int));
+                    value = value[sizeof(int)..];
                     break;
             }
         }
@@ -609,10 +604,10 @@ public struct HashCode
             _v1 = Round(_v1, ToUInt32(value));
             _v2 = Round(_v2, ToUInt32(value.Slice(sizeof(int) * 1)));
             _v3 = Round(_v3, ToUInt32(value.Slice(sizeof(int) * 2)));
-            _v4 = Round(_v4, ToUInt32(value.Slice(sizeof(int) * 3)));
+            _v4 = Round(_v4, ToUInt32(value[(sizeof(int) * 3)..]));
 
             _length += 4;
-            value = value.Slice(sizeof(int) * 4);
+            value = value[(sizeof(int) * 4)..];
         }
 
     Small:
@@ -620,7 +615,7 @@ public struct HashCode
         while (value.Length >= sizeof(int))
         {
             Add(ToInt32(value));
-            value = value.Slice(sizeof(int));
+            value = value[sizeof(int)..];
         }
 
         // Add the remaining bytes a single byte at a time.
@@ -729,7 +724,7 @@ public struct HashCode
         return (int)hash;
     }
 
-#pragma warning disable 0809
+#pragma warning disable CS0809
 
     /// <summary>
     /// 请使用ToHashCode来获得结果
@@ -747,16 +742,13 @@ public struct HashCode
 
     [Obsolete("不允许对比两个HashCode", error: true)]
     public readonly override bool Equals(object? obj) => throw new NotSupportedException("EqualityNotSupported:不允许对比两个HashCode!");
-#pragma warning restore 0809
+#pragma warning restore CS0809
 }
 
 #endregion
 
 #region Range
 /// <summary>表示一个具有起始索引和结束索引的范围。</summary>
-/// <remarks>
-/// 对应 C# 的 .. 范围语法，例如 0..^1。
-/// </remarks>
 public readonly struct Range : IEquatable<Range>
 {
     /// <summary>获取范围的包含起始索引。</summary>

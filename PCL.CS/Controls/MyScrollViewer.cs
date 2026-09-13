@@ -72,7 +72,11 @@ namespace PCL.CS.Controls
             public AniEase Ease { get; }
             public Action<double> Action { get; }
             private double LastValue { get; set; }
-            public override object GetValue(double t)
+            public override object GetValue(TimeSpan t)
+            {
+                return GetValue((double)t.Ticks / TotalTime.Ticks);
+            }
+            public object GetValue(double t)
             {
                 return Ease.GetValue(t) * Value;
             }

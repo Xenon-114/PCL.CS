@@ -66,8 +66,10 @@ public sealed class MyTooltip : DependencyObject
 
     #region 元素附加属性
 
-    private static readonly DependencyProperty _keyCombo = DependencyProperty.RegisterAttached(
-        "KeyCombo", typeof(bool), typeof(MyTooltip), new PropertyMetadata(false));
+    /// <summary>
+    /// 获取或设置<see cref="MyTooltip"/>获取ToolTip内容所依赖的属性。默认为<see cref="ToolTipService.ToolTipProperty"/>。
+    /// </summary>
+    public DependencyProperty ToolTipContentProperty { get; set; } = ToolTipService.ToolTipProperty;
 
     #endregion
 
@@ -157,6 +159,11 @@ public sealed class MyTooltip : DependencyObject
     {
         lock (locker)
         {
+            if (sender is Window)
+            {
+                CloseToolTip();
+                return;
+            }
             if (sender is not FrameworkElement fe ||  !ReferenceEquals(fe, UsingTarget) ) return;
 
             if (_PointInside(fe, Mouse.GetPosition(fe)))
@@ -524,7 +531,7 @@ public sealed class MyTooltip : DependencyObject
     {
         _shell!.Child = null;
 
-        var raw = owner.ToolTip;
+        var raw = owner.GetValue(ToolTipContentProperty);
         var tip = raw as ToolTip;
         var content = tip?.Content ?? raw;
 

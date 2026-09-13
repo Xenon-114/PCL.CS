@@ -176,7 +176,11 @@ namespace PCL.CS.Controls
             public double EndValue { get; set; }
             public MyListItem Obj { get; set; }
             public AniEase Ease { get; set; }
-            public override object GetValue(double t)
+            public override object GetValue(TimeSpan t)
+            {
+                return GetValue(t.TotalMilliseconds / TotalTime.TotalMilliseconds);
+            }
+            public object GetValue(double t)
             {
                 return (EndValue - StartValue) * Ease.GetValue(t) + StartValue;
             }

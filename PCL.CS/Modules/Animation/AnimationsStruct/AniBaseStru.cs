@@ -40,7 +40,7 @@ namespace PCL.CS.Modules
         }
         public EventAnimation(double After, Action action):this(TimeSpan.FromMilliseconds(After),action)
         {}
-        public override object GetValue(double t)
+        public override object GetValue(TimeSpan t)
         {
             return null;
         }
