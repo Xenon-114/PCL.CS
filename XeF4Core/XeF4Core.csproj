@@ -10,9 +10,14 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="FileSystemLinks" Version="1.0.3" />
     <PackageReference Include="Newtonsoft.Json" Version="13.0.4" />
     <PackageReference Include="System.Memory" Version="4.6.3" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Reference Include="Downloader">
+      <HintPath>Downloader.dll</HintPath>
+    </Reference>
   </ItemGroup>
 
 </Project>

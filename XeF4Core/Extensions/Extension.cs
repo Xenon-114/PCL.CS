@@ -372,12 +372,7 @@ public readonly struct VersionCode : IComparable<VersionCode>, IComparable, IEqu
     /// <returns>32位有符号整数哈希代码</returns>
     public override int GetHashCode()
     {
-        int hash = 17;
-        hash = hash * 31 + Major.GetHashCode();
-        hash = hash * 31 + Minor.GetHashCode();
-        hash = hash * 31 + Patch.GetHashCode();
-        hash = hash * 31 + Revision.GetHashCode();
-        return hash;
+        return HashCode.Combine(Major, Minor, Patch, Revision);
     }
     /// <summary></summary>
     /// <returns></returns>

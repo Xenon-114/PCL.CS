@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Diagnostics;
+using System.Runtime.CompilerServices;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
@@ -10,6 +11,7 @@ using System.Windows.Media;
 using System.Windows.Media.Animation;
 using System.Windows.Media.Effects;
 using System.Windows.Threading;
+using System.Xml.Linq;
 
 namespace XeF4Core.WPF;
 
@@ -92,13 +94,9 @@ public sealed class MyTooltip : DependencyObject
     {
         _root = root ?? throw new ArgumentNullException(nameof(root));
 
-
-
-        _OnEnterHandler = OnMouseEnter;
         _OnMoveHandler = OnMouseMove;
         _OnLeaveHandler = OnMouseLeave;
         _OnUnloadedHandler = OnUnload;
-
 
         _shadow.Freeze();
         // 预建 Storyboard
@@ -108,17 +106,65 @@ public sealed class MyTooltip : DependencyObject
         // 挂载事件（仅当前根元素范围内）
         _AttachRootEvents();
 
-        if(root is Window Wnd)
+        if (root is Window Wnd)
         {
             Wnd.Deactivated += (s, e) => CloseToolTip();
         }
-    }
 
+        _roots.Add(root, this);
+
+        _followLoop = new DispatcherTimer(
+            TimeSpan.FromMilliseconds(16),
+            DispatcherPriority.Render,
+            (_, _) => OnFollowTick(),
+            root.Dispatcher);
+        // _followLoop.Start();
+    }
+    private DispatcherTimer _followLoop;
     #endregion
 
     #region 事件注册
 
-    private readonly MouseEventHandler _OnEnterHandler;
+    private static readonly ConditionalWeakTable<FrameworkElement, MyTooltip> _roots = new();
+
+
+    static MyTooltip()
+    {
+        // 全局只注册一次
+        EventManager.RegisterClassHandler(typeof(FrameworkElement),
+            UIElement.MouseEnterEvent, new MouseEventHandler(OnGlobalMouseEnter), true);
+        EventManager.RegisterClassHandler(typeof(FrameworkElement),
+            UIElement.MouseLeaveEvent, new MouseEventHandler(OnGlobalMouseLeave), true);
+        EventManager.RegisterClassHandler(typeof(FrameworkElement),
+            FrameworkElement.ToolTipOpeningEvent, new RoutedEventHandler(OnTooltipOpening), true);
+    }
+    private static void OnGlobalMouseEnter(object sender, MouseEventArgs e)
+    {
+        if (sender is not FrameworkElement fElement) return;
+        SendToHost(fElement, tooltip => { tooltip.OnMouseEnter(sender, e); });
+    }
+    private static void OnGlobalMouseLeave(object sender, MouseEventArgs e)
+    {
+        if (sender is not FrameworkElement fElement) return;
+        SendToHost(fElement, tooltip => { tooltip.OnMouseLeave(sender, e); });
+    }
+    private static void OnTooltipOpening(object sender, RoutedEventArgs e)
+    {
+        if(sender is not FrameworkElement fElement) return;
+        for (FrameworkElement? cur = fElement; cur is not null; cur = _GetTreeParent(cur) as FrameworkElement)
+            if (_roots.TryGetValue(cur, out _))
+            {
+                e.Handled = true;
+                return;
+            }
+    }
+    private static void SendToHost(FrameworkElement fElement, Action<MyTooltip> action)
+    {
+        if (action is null) throw new ArgumentNullException(nameof(action));
+        for (FrameworkElement? cur = fElement; cur is not null; cur = _GetTreeParent(cur) as FrameworkElement)
+            if (_roots.TryGetValue(cur, out var tooltip))
+                action.Invoke(tooltip);
+    }
     private readonly MouseEventHandler _OnMoveHandler;
     private readonly MouseEventHandler _OnLeaveHandler;
     private readonly RoutedEventHandler _OnUnloadedHandler;
@@ -126,34 +172,33 @@ public sealed class MyTooltip : DependencyObject
     private void _AttachRootEvents()
     {
         // 在根元素上拦截事件（handledEventsToo = true）
-        EventManager.RegisterClassHandler(typeof(FrameworkElement),
-            UIElement.MouseEnterEvent, _OnEnterHandler, true);
-        EventManager.RegisterClassHandler(typeof(FrameworkElement),
-            UIElement.MouseMoveEvent, _OnMoveHandler);
-        EventManager.RegisterClassHandler(typeof(FrameworkElement),
-            UIElement.MouseLeaveEvent, _OnLeaveHandler);
-        EventManager.RegisterClassHandler(typeof(FrameworkElement),
-            FrameworkElement.UnloadedEvent, _OnUnloadedHandler);
-        EventManager.RegisterClassHandler(typeof(FrameworkElement),
-            ToolTipService.ToolTipOpeningEvent, new ToolTipEventHandler((s, e) => { e.Handled = true; }), true);
+        _root.AddHandler(UIElement.MouseMoveEvent, _OnMoveHandler, true);
+        _root.AddHandler(UIElement.MouseLeaveEvent, _OnLeaveHandler, true);
+        _root.AddHandler(FrameworkElement.UnloadedEvent, _OnUnloadedHandler, true);
     }
 
     #endregion
 
     #region 事件处理
-    private void OnMouseEnter(object sender,MouseEventArgs e)
+
+    private void OnFollowTick()
+    {
+        if (_flyout is not { IsOpen: true }) return;
+        if (Target is null) return;
+        _PlaceNear();
+    }
+    private void OnMouseEnter(object sender, MouseEventArgs e)
     {
         if (sender is not FrameworkElement FElement) return;
         FElement.Dispatcher.BeginInvoke(() => TryShow(FElement));
     }
     private void OnMouseMove(object sender, MouseEventArgs e)
     {
-        if (sender is not FrameworkElement FElement) return;
+        if (sender is not FrameworkElement) return;
         var Over = _SeekOwner(_Over());
         if (Over is not null)
             TryShow(Over);
-
-        _PlaceNear();
+        else CloseToolTip();
     }
     private void OnMouseLeave(object sender, MouseEventArgs e)
     {
@@ -164,11 +209,11 @@ public sealed class MyTooltip : DependencyObject
                 CloseToolTip();
                 return;
             }
-            if (sender is not FrameworkElement fe ||  !ReferenceEquals(fe, UsingTarget) ) return;
+            if (sender is not FrameworkElement fe || !ReferenceEquals(fe, UsingTarget)) return;
 
             if (_PointInside(fe, Mouse.GetPosition(fe)))
             {
-                e.Handled = true;
+                // e.Handled = true;
                 return;
             }
 
@@ -319,7 +364,7 @@ public sealed class MyTooltip : DependencyObject
 
     private object? _FetchContentObject(FrameworkElement src)
     {
-        var raw = src.ToolTip;
+        var raw = src.GetValue(ToolTipContentProperty);
         if (raw is null) return null;
         var payload = raw is ToolTip tip ? tip.Content : raw;
         return payload;
@@ -343,7 +388,7 @@ public sealed class MyTooltip : DependencyObject
                 StopShowAfter();
                 NewTarget = null;
             }
-            if(State is ToolTipState.Showing)
+            if (State is ToolTipState.Showing)
             {
                 NewTarget = null;
                 State = ToolTipState.ChangingOrClosing;
@@ -381,6 +426,7 @@ public sealed class MyTooltip : DependencyObject
             {
                 _flyout!.IsOpen = false;
                 Target = null;
+                _followLoop.Stop();
             }
         }
     }
@@ -399,15 +445,17 @@ public sealed class MyTooltip : DependencyObject
     {
         lock (locker)
         {
+
             Target = NewTarget;
             //Debug.WriteLine("ToolTip已显示");
             if (Target is not null)
             {
+                _followLoop.Start();
+                State = ToolTipState.Showing;
                 _RenderInside(Target);
                 _PlaceNear();
                 _flyout!.IsOpen = true;
                 OpenStory?.Begin();
-                State = ToolTipState.Showing;
             }
         }
     }
@@ -432,7 +480,6 @@ public sealed class MyTooltip : DependencyObject
             NewTarget = target;
             _latch?.Stop();
             var ms = Math.Max(0, ToolTipService.GetInitialShowDelay(NewTarget));
-            //Debug.WriteLine($"ToolTip将在200毫秒后显示，代{gen}");
             State = ToolTipState.Waiting;
             _latch = new DispatcherTimer(
             TimeSpan.FromMilliseconds(ms),
@@ -589,18 +636,18 @@ public sealed class MyTooltip : DependencyObject
             if (LastPlctMode != mode) LastPlctMode = mode;
         }
         else mode = LastPlctMode;
-        
 
         if (mode == PlacementMode.Mouse)
         {
             _flyout.Placement = PlacementMode.Relative;
             _flyout.PlacementTarget = _root;
-            var pt = Mouse.GetPosition(_root);
+            if (!Windows.GetCursorPos(out var pts)) return;
+            var pt = _root.PointFromScreen(new Point(pts.X, pts.Y));
             _flyout.PlacementRectangle = default;
-            if(target is not null)
+            if (target is not null)
             {
                 LastHorizontalOffset = ToolTipService.GetHorizontalOffset(target);
-                LastVerticalOffset= ToolTipService.GetVerticalOffset(target);
+                LastVerticalOffset = ToolTipService.GetVerticalOffset(target);
             }
             _flyout.HorizontalOffset = Math.Round(pt.X + 15 + LastHorizontalOffset);
             _flyout.VerticalOffset = Math.Round(pt.Y + 25 + LastVerticalOffset);
@@ -609,7 +656,8 @@ public sealed class MyTooltip : DependencyObject
         {
             _flyout.Placement = PlacementMode.Relative;
             _flyout.PlacementTarget = _root;
-            var pt = Mouse.GetPosition(_root);
+            if (!Windows.GetCursorPos(out var pts)) return;
+            var pt = _root.PointFromScreen(new Point(pts.X, pts.Y));
             _flyout.PlacementRectangle = default;
             if (target is not null)
             {
@@ -635,4 +683,5 @@ public sealed class MyTooltip : DependencyObject
     }
 
     #endregion
+
 }

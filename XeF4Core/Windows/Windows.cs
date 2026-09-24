@@ -146,6 +146,7 @@ public static class Windows
     public static extern bool GetFileInformationByHandle(
         IntPtr hFile,
         out FileInfomation lpFileInformation);
+
 }
 
 #pragma warning restore CS1591

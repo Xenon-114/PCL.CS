@@ -1,10 +1,12 @@
 ﻿using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace XeF4Core;
@@ -97,11 +99,11 @@ public class Java
 
         if (ClassPaths.IsNullOrEmpty())
         {
-            if (!JvmArgs.Contains("-cp")) throw new ArgumentNullException(nameof(ClassPaths));
+            if (!JvmArgs.IsNullOrEmpty()&&!JvmArgs.Contains("-cp")) throw new ArgumentNullException(nameof(ClassPaths));
         }
         else
         {
-            if (JvmArgs.Contains("-cp")) throw new ArgumentException($"JVM参数中已包含ClassPaths，请不要重复添加。{ClassPaths.IsNullOrEmpty()}");
+            if (!JvmArgs.IsNullOrEmpty() && JvmArgs.Contains("-cp")) throw new ArgumentException($"JVM参数中已包含ClassPaths，请不要重复添加。{ClassPaths.IsNullOrEmpty()}");
             sb.Append($"-cp \"{string.Join(";", ClassPaths)}\" ");
         }
 
@@ -225,7 +227,8 @@ public class Java
         Architecture = architecture;
         Vendor = vendor;
     }
-    private static readonly Dictionary<string, Java> Javas = new();
+    private static readonly ConcurrentDictionary<string, Lazy<Task<Java>>> Javas
+    = new(StringComparer.OrdinalIgnoreCase);
 
     /// <summary>
     /// 从某一个可执行文件创建Java
@@ -243,14 +246,23 @@ public class Java
             file = file[1..^1];
         }
         file = FileExtensions.GetCanonicalPath(file);
-        if (!File.Exists(file))
+        var lazy = Javas.GetOrAdd(file, f => new Lazy<Task<Java>>(
+            () => LoadJavaAsync(f),
+            LazyThreadSafetyMode.ExecutionAndPublication));
+        try
         {
-            if (Javas.ContainsKey(file)) Javas.Remove(file);
-            throw new FileNotFoundException($"文件不存在：{file}");
+            return await lazy.Value;
         }
-        if (Javas.TryGetValue(file, out var java)) return java;
-
-        var result = await RunCommandAsync(file, "-version");
+        catch
+        {
+            if (Javas.TryGetValue(file, out var java) && ReferenceEquals(java, lazy))
+                Javas.TryRemove(file, out _);
+            throw;
+        }
+    }
+    private static async Task<Java> LoadJavaAsync(string canonicalFile)
+    {
+        var result = await RunCommandAsync(canonicalFile, "-version");
 
         var strs = result.StandardError.Split('\n');
 
@@ -273,7 +285,7 @@ public class Java
 
         JavaVendor vendor = GetVendor(JavaRuntimeEnviroment);
 
-        return new Java(file, versionCode, architecture, vendor);
+        return new Java(canonicalFile, versionCode, architecture, vendor);
     }
     private static JavaVendor GetVendor(string JavaRE)
     {

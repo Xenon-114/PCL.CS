@@ -14,7 +14,7 @@ public class MyWorkingList
     /// <summary>
     /// 异步任务调度限制。默认16
     /// </summary>
-    public int AsyncWorkLimit { get; set; } = 16;
+    public uint AsyncWorkLimit { get; set; } = 16u;
     private Queue<WorkApply> WorkApplies { get; } = new();
     private int WorkingTaskCounter = 0;
     /// <summary>

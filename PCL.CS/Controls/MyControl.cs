@@ -87,25 +87,4 @@ namespace PCL.CS.Controls
         }
         public event EventHandler SelectedItemChanged;
     }
-    public static class MyToolTipService
-    {
-        public static DependencyProperty ToolTipProperty = DependencyProperty.RegisterAttached("ToolTip", typeof(object), typeof(MyToolTipService));
-        public static object GetToolTip(FrameworkElement obj)
-        {
-            return obj.GetValue(ToolTipProperty);
-        }
-        public static void SetToolTip(FrameworkElement obj, object value)
-        {
-            obj.SetValue(ToolTipProperty, value);
-        }
-        public readonly struct ToolTipGetter
-        {
-            public object this[FrameworkElement obj]
-            {
-                get => MyToolTipService.GetToolTip(obj);
-                set => SetToolTip(obj, value);
-            }
-        }
-        public static ToolTipGetter ToolTip => new ToolTipGetter();
-    }
 }
