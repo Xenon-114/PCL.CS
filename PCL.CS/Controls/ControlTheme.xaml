@@ -338,7 +338,6 @@
         </Style.Triggers>
     </Style>
 
-
     <Style TargetType="{x:Type local:MyRadioButton}">
         <Setter Property="Logo" Value=""/>
         <Setter Property="Text" Value=""/>
@@ -550,22 +549,22 @@
         <Setter Property="ToolTipService.Placement" Value="Right" />
         <Setter Property="ToolTipService.VerticalOffset" Value="-2" />
         <Setter Property="FocusVisualStyle" Value="{x:Null}" />
+        <Setter Property="BorderBrush" Value="{DynamicResource ColorBrush5}"/>
+        <Setter Property="BackColorNormal" Value="{DynamicResource ColorObject6}"/>
+        <Setter Property="BackColorSelect" Value="{DynamicResource ColorObject5}"/>
+        <Setter Property="ForeColorNormal" Value="{DynamicResource ColorObject1}"/>
+        <Setter Property="ForeColorSelect" Value="{DynamicResource ColorObject3}"/>
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="{x:Type local:MyListItem}">
+                    <!--判定-->
                     <Border CornerRadius="6" Background="Transparent">
-                        <!--判定-->
                         <Grid x:Name="PART_Main">
-                            <Border CornerRadius="6" Background="{TemplateBinding Background}" BorderThickness="0.5" x:Name="PART_Background" BorderBrush="{DynamicResource ColorBrush5}" Margin="0,0,0,0"/>
+                            <Border CornerRadius="6" BorderThickness="0.5" x:Name="PART_Background" BorderBrush="{TemplateBinding BorderBrush}" Margin="0,0,0,0"/>
                             <Grid>
-                                <Grid Width="5" HorizontalAlignment="Left" Margin="-1,0,0,0">
-                                    <Grid.RowDefinitions>
-                                        <RowDefinition Height="1*"/>
-                                        <RowDefinition Height="3*" x:Name="PART_RowDef"/>
-                                        <RowDefinition Height="1*"/>
-                                    </Grid.RowDefinitions>
+                                <local:RatioControl Width="5" HorizontalAlignment="Left" Margin="-1,0,0,0" HeightRatio="0" x:Name="PART_Ratio">
                                     <Border Grid.Row="1" CornerRadius="2" Background="{DynamicResource ColorBrush3}" Opacity="1"/>
-                                </Grid>
+                                </local:RatioControl>
                                 <ContentPresenter Content="{TemplateBinding Content}" Margin="5,5,5,5"/>
                             </Grid>
                         </Grid>

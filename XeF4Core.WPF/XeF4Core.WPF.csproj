@@ -8,6 +8,7 @@
     <InternalsVisibleTo>XeF4Core</InternalsVisibleTo>
     <LangVersion>14.0</LangVersion>
     <Configurations>Debug;Release</Configurations>
+    <GenerateDocumentationFile>False</GenerateDocumentationFile>
   </PropertyGroup>
 
   <ItemGroup>

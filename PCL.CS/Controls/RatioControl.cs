@@ -39,10 +39,21 @@ namespace PCL.CS.Controls
             if (Child is null)
                 return base.MeasureOverride(constraint);
 
+            double childWidth = double.IsPositiveInfinity(constraint.Width)
+                ? constraint.Width                              
+                : constraint.Width * WidthRatio;
 
-            Size ChildMeasureSize = new Size(constraint.Width * WidthRatio,constraint.Height * HeightRatio);
+            double childHeight = double.IsPositiveInfinity(constraint.Height)
+                ? constraint.Height
+                : constraint.Height * HeightRatio;
+
+            Size ChildMeasureSize = new Size(childWidth,childHeight);
             Child.Measure(ChildMeasureSize);
-            return new Size(Child.DesiredSize.Width / WidthRatio, Child.DesiredSize.Height / HeightRatio);
+            double DesWidth = Child.DesiredSize.Width / WidthRatio;
+            double DesHeight = Child.DesiredSize.Height / HeightRatio;
+            if (WidthRatio is 0) DesWidth = Child.DesiredSize.Width;
+            if (HeightRatio is 0) DesHeight = Child.DesiredSize.Height;
+            return new Size(DesWidth, DesHeight);
         }
         protected override Size ArrangeOverride(Size arrangeSize)
         {

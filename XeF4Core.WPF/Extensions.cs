@@ -12,6 +12,9 @@ using System.Xml.Linq;
 
 namespace XeF4Core.WPF;
 
+/// <summary>
+/// 对于WPF的简单扩展
+/// </summary>
 public static class Extensions
 {
     /// <summary>
@@ -56,10 +59,18 @@ public static class Extensions
             Object.SetValue(Property, ResourceReferenceFactory.Invoke(Name));
         }
     }
+    ///
     public static PropertyPath ToPropertyPath(this DependencyProperty Property)
     {
         return new PropertyPath(Property);
     }
+    /// <summary>
+    /// 设置绑定
+    /// </summary>
+    /// <param name="Object">你为什么要这么调用？</param>
+    /// <param name="Property">指定的依赖属性</param>
+    /// <param name="binding">绑定对象</param>
+    /// <returns></returns>
     public static BindingExpressionBase SetBinding(this DependencyObject Object, DependencyProperty Property, BindingBase binding) =>
         BindingOperations.SetBinding(Object, Property, binding);
     

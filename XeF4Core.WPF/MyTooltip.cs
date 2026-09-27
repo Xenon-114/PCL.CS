@@ -15,10 +15,13 @@ using System.Xml.Linq;
 
 namespace XeF4Core.WPF;
 
+/// <summary>
+/// 自定义ToolTip
+/// </summary>
 public sealed class MyTooltip : DependencyObject
 {
     #region 样式画刷
-
+#pragma warning disable CS1591
     public Brush Background
     {
         get => (Brush)GetValue(BackgroundProperty);
@@ -39,7 +42,7 @@ public sealed class MyTooltip : DependencyObject
         DependencyProperty.Register(nameof(BorderBrush), typeof(Brush), typeof(MyTooltip), new PropertyMetadata(SystemColors.WindowFrameBrush));
 
 
-
+#pragma warning restore
 
     #endregion
 
@@ -89,7 +92,11 @@ public sealed class MyTooltip : DependencyObject
     #endregion
 
     #region 构建函数
-
+    /// <summary>
+    /// 自定义ToolTip
+    /// </summary>
+    /// <param name="root"></param>
+    /// <exception cref="ArgumentNullException"></exception>
     public MyTooltip(FrameworkElement root)
     {
         _root = root ?? throw new ArgumentNullException(nameof(root));
