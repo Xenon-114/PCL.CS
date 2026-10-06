@@ -12,11 +12,11 @@ public readonly struct ValueRange<T> : IEquatable<ValueRange<T>> where T : IComp
     /// <summary>
     /// 下界值
     /// </summary>
-    public T? Lower { get; }
+    public ValueBoxer<T>? Lower { get; }
     /// <summary>
     /// 上界值
     /// </summary>
-    public T? Upper { get; }
+    public ValueBoxer<T>? Upper { get; }
     /// <summary>
     /// 下界值是否为闭区间
     /// </summary>
@@ -32,7 +32,7 @@ public readonly struct ValueRange<T> : IEquatable<ValueRange<T>> where T : IComp
     /// <param name="upper"></param>
     /// <param name="isLowerSealed"></param>
     /// <param name="isUpperSealed"></param>
-    public ValueRange(T? lower, T? upper, bool isLowerSealed, bool isUpperSealed)
+    public ValueRange(ValueBoxer<T>? lower, ValueBoxer<T>? upper, bool isLowerSealed, bool isUpperSealed)
     {
         Lower = lower;
         Upper = upper;
@@ -118,19 +118,19 @@ public readonly struct ValueRange<T> : IEquatable<ValueRange<T>> where T : IComp
         int point = s.IndexOfAny(',', '，');
         if(point is -1)throw new FormatException("缺少','");
         string LowerStr = s[1..point].Trim();
-        string UpperStr = s[(point + 1)..^2].Trim();
-        T? Lower;
-        T? Upper;
+        string UpperStr = s[(point + 1)..^1].Trim();
+        ValueBoxer<T>? Lower;
+        ValueBoxer<T>? Upper;
         if (LowerStr == "" || LowerStr == "-∞" || LowerStr == "-Infinity")
         {
-            Lower = default;
+            Lower = null;
             isLowerSealed = false;
         }
         else
             Lower = Parser is not null ? Parser(LowerStr) : (T)Convert.ChangeType(LowerStr, typeof(T));
         if (UpperStr == "" || UpperStr == "∞" || UpperStr == "+∞" || UpperStr == "Infinity" || UpperStr == "+Infinity")
         {
-            Upper = default;
+            Upper = null;
             isUpperSealed = false;
         }
         else
@@ -147,13 +147,13 @@ public readonly struct ValueRange<T> : IEquatable<ValueRange<T>> where T : IComp
     {
         if (Lower is not null)
         {
-            int cmp = value.CompareTo(Lower);
+            int cmp = value.CompareTo(Lower.Value.Value);
             if (cmp < 0) return false;
             if (cmp == 0 && !IsLowerSealed) return false;
         }
         if (Upper is not null)
         {
-            int cmp = value.CompareTo(Upper);
+            int cmp = value.CompareTo(Upper.Value.Value);
             if (cmp > 0) return false;
             if (cmp == 0 && !IsUpperSealed) return false;
         }
@@ -166,7 +166,7 @@ public readonly struct ValueRange<T> : IEquatable<ValueRange<T>> where T : IComp
     public bool IsEmpty()
     {
         if (Lower is null || Upper is null) return false;
-        int Compare = Lower.CompareTo(Upper);
+        int Compare = Lower?.Value.CompareTo(Upper.Value.Value) ?? throw new Exception("？？？");
         if (Compare < 0) return false;
         if (Compare > 0) return true;
         if (IsLowerSealed && IsUpperSealed) return false;
@@ -180,20 +180,20 @@ public readonly struct ValueRange<T> : IEquatable<ValueRange<T>> where T : IComp
     /// <returns></returns>
     public static ValueRange<T>? Intersect(ValueRange<T> rangea, ValueRange<T> rangeb)
     {
-        static (T? value, bool inclusive) ChooseLower(T? a, bool aInc, T? b, bool bInc)
+        static (ValueBoxer<T>? value, bool inclusive) ChooseLower(ValueBoxer<T>? a, bool aInc, ValueBoxer<T>? b, bool bInc)
         {
             if (a is null) return (b, bInc);
             if (b is null) return (a, aInc);
-            int cmp = a.CompareTo(b);
+            int cmp = a?.Value.CompareTo(b.Value.Value) ?? throw new Exception("？？？");
             if (cmp > 0) return (a, aInc);
             if (cmp < 0) return (b, bInc);
             return (a, aInc && bInc);
         }
-        static (T? value, bool inclusive) ChooseUpper(T? a, bool aInc, T? b, bool bInc)
+        static (ValueBoxer<T>? value, bool inclusive) ChooseUpper(ValueBoxer<T>? a, bool aInc, ValueBoxer<T>? b, bool bInc)
         {
             if (a is null) return (b, bInc);
             if (b is null) return (a, aInc);
-            int cmp = a.CompareTo(b);
+            int cmp = a?.Value.CompareTo(b.Value.Value) ?? throw new Exception("？？？");
             if (cmp < 0) return (a, aInc);
             if (cmp > 0) return (b, bInc);
             return (a, aInc && bInc);
@@ -212,8 +212,8 @@ public readonly struct ValueRange<T> : IEquatable<ValueRange<T>> where T : IComp
     /// <inheritdoc/>
     public bool Equals(ValueRange<T> other)
     {
-        return EqualityComparer<T?>.Default.Equals(Lower, other.Lower) &&
-               EqualityComparer<T?>.Default.Equals(Upper, other.Upper) &&
+        return EqualityComparer<ValueBoxer<T>?>.Default.Equals(Lower, other.Lower) &&
+               EqualityComparer<ValueBoxer<T>?>.Default.Equals(Upper, other.Upper) &&
                IsLowerSealed == other.IsLowerSealed &&
                IsUpperSealed == other.IsUpperSealed;
     }
@@ -221,8 +221,8 @@ public readonly struct ValueRange<T> : IEquatable<ValueRange<T>> where T : IComp
     public override int GetHashCode()
     {
         var hashCode = new HashCode();
-        hashCode.Add(Lower, EqualityComparer<T?>.Default);
-        hashCode.Add(Upper, EqualityComparer<T?>.Default);
+        hashCode.Add(Lower, EqualityComparer<ValueBoxer<T>?>.Default);
+        hashCode.Add(Upper, EqualityComparer<ValueBoxer<T>?>.Default);
         hashCode.Add(IsLowerSealed);
         hashCode.Add(IsUpperSealed);
         return hashCode.ToHashCode();

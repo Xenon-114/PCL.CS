@@ -151,19 +151,9 @@ namespace PCL.CS.Controls
             backBrush.SetBinding(SolidColorBrush.ColorProperty, new Binding(nameof(BackColor)) { Source = this, UpdateSourceTrigger = UpdateSourceTrigger.PropertyChanged, Mode = BindingMode.OneWay });
             BackgroundBorder.Background = backBrush;
 
+            Ratio.HeightRatio = IsChecked ? 0.75 : 0;
+
             return;
-
-
-#pragma warning disable CS0162 // 检测到无法访问的代码
-            this.SetResourceReference(BackColorProperty, "ColorObject7");
-#pragma warning restore CS0162 // 检测到无法访问的代码
-            if (IsChecked) RowDefinition.Height = new GridLength(6, GridUnitType.Star);
-            else RowDefinition.Height = new GridLength(0, GridUnitType.Star);
-            AnimScale.ScaleX = AnimScale.ScaleY = DefaultAnimScale;
-            SolidColorBrush Fore = new SolidColorBrush();
-            this.Foreground = Fore;
-            Fore.Color = (Color)(IsChecked ? App.Current.FindResource("ColorObject3") : App.Current.FindResource("ColorObject1"));
-            this.SetResourceReference(ForeColorProperty, IsChecked ? "ColorObject4" : "ColorObject1");
         }
         //private AnimationGroup AnimationDownUp;
 
@@ -305,7 +295,12 @@ namespace PCL.CS.Controls
             if (e.OldValue is not bool OldValue)
                 OldValue = false;
             if (value == OldValue) return;
-            if (Ratio is null || !this.IsLoaded) return;
+            if (Ratio is null || !this.IsLoaded)
+            {
+                ForeColorMixer.ColorARatio = value ? 1 : 0;
+                if (Ratio is not null) Ratio.HeightRatio = value ? 0.75 : 0;
+                return;
+            }
             if (value && !OldValue) RaiseEvent(new RoutedEventArgs(CheckedEvent));
             if (value)
             {
@@ -362,6 +357,7 @@ namespace PCL.CS.Controls
         //    }
         //}
         //private bool _IsChecked;
+
         public static readonly RoutedEvent ClickEvent = MyButton.ClickEvent;
         public event RoutedEventHandler Click
         {

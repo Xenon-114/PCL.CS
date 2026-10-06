@@ -17,7 +17,7 @@ namespace PCL.CS.Pages
         {
             PagesStack.Push(0);
             Pages.Add(new MyPageTemplate(new PageLaunchLeft(), new List<MyPageRight> { null }, false, ""));
-            Pages.Add(new MyPageTemplate(new PageDownloadLeft(), new List<MyPageRight> { new MyDeveloping() }, false, ""));
+            Pages.Add(new MyPageTemplate(new PageDownloadLeft(), new List<MyPageRight> { new PageDownloadMinecraft() }, false, ""));
             Pages.Add(new MyPageTemplate(null, new List<MyPageRight> { new MyDeveloping() }, false, ""));
             Pages.Add(new MyPageTemplate(null, new List<MyPageRight> { new MyDeveloping() }, false, ""));
             Pages.Add(new MyPageTemplate(null, new List<MyPageRight> { new PageAbout() }, false, ""));

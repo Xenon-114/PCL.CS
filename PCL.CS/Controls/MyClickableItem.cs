@@ -93,7 +93,7 @@ namespace PCL.CS.Controls
                     (d as MyClickableItem).LabInfo.Visibility = Visibility.Visible;
             }));
 
-        private UIElement LabInfo = null;
+        private readonly UIElement LabInfo = null;
 
         [DesignerSerializationVisibility(DesignerSerializationVisibility.Content)]
         public UIElementCollection Buttons { get; }

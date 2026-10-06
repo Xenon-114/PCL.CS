@@ -2,6 +2,7 @@
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
+using XeF4Core;
 
 namespace PCL.CS
 {
@@ -36,7 +37,7 @@ namespace PCL.CS
 
             Minecraft.OnSelectGroupChanged += (s, e) => PCL.CS.Modules.Main.Hint($"已选中位于{e?.MinecraftDirectory.FullName}的游戏组");
 
-            Modules.Main.Hint($"{{{^114514}}}");
+            Modules.Main.Hint($"{ValueRange<double>.FromString("[2,3.4]").ToString()}");
         }
     }
 }

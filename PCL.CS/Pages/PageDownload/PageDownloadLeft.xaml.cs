@@ -78,8 +78,8 @@ namespace PCL.CS.Pages
                         Element.RenderTransform = TransGroup;
                     }
                 }
-                AniGroup.Add(new DoubleAnimation(Translate, TranslateTransform.XProperty, Translate.X, -25, 150, Index/MainStackPanel.Children.Count * 300,new AniEaseInFluent(3)));
-                AniGroup.Add(new DoubleAnimation(Element, UIElement.OpacityProperty, Element.Opacity, 0, 150, Index / MainStackPanel.Children.Count * 300));
+                AniGroup.Add(new DoubleAnimation(Translate, TranslateTransform.XProperty, Translate.X, -25, 150, (double)Index / MainStackPanel.Children.Count * 150, new AniEaseInFluent(3)));
+                AniGroup.Add(new DoubleAnimation(Element, UIElement.OpacityProperty, Element.Opacity, 0, 150, (double)Index / MainStackPanel.Children.Count * 150));
             }
             return AniGroup;
         }

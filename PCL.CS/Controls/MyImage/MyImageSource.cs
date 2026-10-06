@@ -26,7 +26,20 @@ namespace PCL.CS.Controls
         }
         
         private ImageSource Source { get; set; }
-        private Task LoadingTask { get; set; }
+        private readonly object locker = new object();
+        private Task LoadingTask
+        {
+            get
+            {
+                lock (locker)
+                {
+                    if (ltsk is null || ltsk.IsFaulted)
+                        return ltsk = LoadImage();
+                    return ltsk;
+                }
+            }
+        }
+        private Task ltsk = null;
         private static bool IsPathRooted(string path)
         {
             if (string.IsNullOrEmpty(path) || path.Length < 2)
@@ -39,19 +52,16 @@ namespace PCL.CS.Controls
             return (first >= 'A' && first <= 'Z' || first >= 'a' && first <= 'z')
                 && second == ':';
         }
-        private void LoadImage()
+        private Task LoadImage()
         {
             if (SourcePath.StartsWith("http://", StringComparison.OrdinalIgnoreCase) ||
                 SourcePath.StartsWith("https://", StringComparison.OrdinalIgnoreCase))
             {
-                LoadingTask = LoadImageFromInternet();
-                return;
+                return LoadImageFromInternet();
             }
-            LoadingTask = Task.Run(GetInner);
+            return Task.Run(GetInner);
             void GetInner()
             {
-
-
                 if (IsPathRooted(SourcePath))
                 {
                     LoadImageFromFilePath(SourcePath);
@@ -75,7 +85,6 @@ namespace PCL.CS.Controls
                 LoadImageFromStream(ResourceStream);
                 return;
             }
-            return;
         }
         private async Task LoadImageFromInternet()
         {
@@ -197,25 +206,21 @@ namespace PCL.CS.Controls
             SourcePath = Path;
         }
         public MyImageSource() { }
-        private void SetSourcePath(string Path)
+        private string SetSourcePath(string Path)
         {
             Path = Path.Trim();
             Path = Path.Trim('"', '\'', '“', '”', '‘', '’');
-            Path = Path.Replace('\\', '/');
-            LoadImage();
+            return Path.Replace('\\', '/');
         }
-        private bool HasSetSourcePath = false;
         private string _sourcePath = null;
         public string SourcePath
         {
             get => _sourcePath;
             set
             {
-                if (HasSetSourcePath) 
+                if (_sourcePath is not null) 
                     throw new InvalidOperationException("无法再次设置对象的SourcePath！");
-                _sourcePath = value;
-                SetSourcePath(value);
-                HasSetSourcePath = true;
+                _sourcePath = SetSourcePath(value);
             }
         }
         public static implicit operator MyImageSource(string Path) => new MyImageSource(Path);
