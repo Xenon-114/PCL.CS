@@ -6,6 +6,10 @@
     <BuildType Name="Release" />
   </Configurations>
   <Project Path="PCL.CS/PCL.CS.csproj" Id="6c0f302e-636d-4fcf-9534-7ed36aa73bd8" />
+  <Project Path="XeF4Core.HttpService/XeF4Core.HttpService.csproj" Id="a889f8d2-47a3-48b1-9841-4ce9f7fbb290">
+    <BuildType Solution="Alpha|*" Project="Debug" />
+    <BuildType Solution="Beta|*" Project="Debug" />
+  </Project>
   <Project Path="XeF4Core.WPF/XeF4Core.WPF.csproj" Id="33865e9f-d97b-4ad6-9559-49ca31a43424">
     <BuildType Solution="Alpha|*" Project="Debug" />
     <BuildType Solution="Beta|*" Project="Debug" />

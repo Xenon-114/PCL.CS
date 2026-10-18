@@ -1,5 +1,4 @@
-﻿using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
+﻿using System.Text.Json;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -47,6 +46,9 @@ public partial class MinecraftRunner
     /// 获取或设置启动游戏所用的Java。
     /// </summary>
     public Java? GameJava { get; set; }
+    private List<Argument> JvmArgs { get; } = [];
+    private List<Argument> GameArgs { get; } = [];
+    private List<Library> Libraries { get; } = [];
     /// <summary>
     /// 创建<see cref="MinecraftRunner"/>
     /// </summary>
@@ -58,21 +60,28 @@ public partial class MinecraftRunner
         GameJava = minecraft.Java;
         Jsons = V ?? throw new JsonException("读取Json失败！");
 
-        if (Jsons.Patches.Count > 0)
+        if (Jsons.Arguments is not null && !Jsons.Arguments.JvmArgs.IsNullOrEmpty())
+            JvmArgs.AddRange(Jsons.Arguments.JvmArgs);
+        if (Jsons.Arguments is not null && !Jsons.Arguments.GameArgs.IsNullOrEmpty())
+            GameArgs.AddRange(Jsons.Arguments.GameArgs);
+        if (!Jsons.Libraries.IsNullOrEmpty())
+            Libraries.AddRange(Jsons.Libraries);
+
+        if (Jsons.Patches is not null&&Jsons.Patches.Count > 0)
         {
-            foreach (var patch in V.Patches)
+            foreach (var patch in Jsons.Patches)
             {
                 if (patch.Arguments is not null)
                 {
                     Arguments Args = patch.Arguments;
-                    if (Args.JvmArgs.Count > 0)
-                        Jsons.Arguments?.JvmArgs.AddRange(Args.JvmArgs);
-                    if (Args.GameArgs.Count > 0)
-                        Jsons.Arguments?.GameArgs.AddRange(Args.GameArgs);
+                    if (!Args.JvmArgs.IsNullOrEmpty())
+                        this.JvmArgs.AddRange(Args.JvmArgs);
+                    if (!Args.GameArgs.IsNullOrEmpty())
+                        this.GameArgs.AddRange(Args.GameArgs);
                 }
                 if(patch.Libraries.Count > 0)
                 {
-                    Jsons.Libraries.AddRange(patch.Libraries);
+                    this.Libraries.AddRange(patch.Libraries);
                 }
                 if(!string.IsNullOrEmpty(patch.MainClass))
                     Jsons.MainClass = patch.MainClass;
@@ -93,27 +102,6 @@ public partial class MinecraftRunner
     private bool IsLogin = false;
     private string AuthXuid = "";
 
-    private bool IsRulesEnable(Rule rule, IReadOnlyDictionary<string, bool>? Features)
-    {
-
-        //{
-        //    Console.WriteLine("规则");
-        //    if (rule.Os is not null) Console.WriteLine($"适用于平台{rule.Os.Name.ToString()}，架构{rule.Os.Arch?.ToString()??"任意"}");
-        //}
-        bool Used = true;
-        if (rule.Os is not null)
-            if (rule.Os.Name is not null && !RuntimeInformation.IsOSPlatform(((OSPlatform)rule.Os.Name).ToOsPlatform())) Used = false;
-            else if (!Extensions.IsArchMatch(rule.Os.Arch)) Used = false;
-
-
-        if (rule.Features is not null)
-            if (Features is null) Used = false;
-            else foreach (var f in rule.Features)
-                if (!Features.TryGetValue(f.Key, out var value) || f.Value != value)
-                    Used = false;
-        if (rule.Action is "disallow") Used = !Used;
-        return Used;
-    }
     /// <summary>
     /// 使用登录信息登录游戏
     /// </summary>
@@ -258,11 +246,6 @@ public partial class MinecraftRunner
     /// <exception cref="JsonException"></exception>
     public IMyTaskList FileChecks(Downloader downloader)
     {
-        Dictionary<string, bool> Features = new();
-        foreach (var i in Extras)
-            if (i.Features is not null)
-                foreach (var f in i.Features)
-                    Features[f.Key] = f.Value;
         MyTaskList myTaskList = new();
         #region 游戏本体检查
         if (Jsons.Downloads?.Client is not null)
@@ -294,21 +277,10 @@ public partial class MinecraftRunner
                 tasks.downloads.Add(dltsk);
             }
         }
-        foreach (var lib in Jsons.Libraries)
+        foreach (var lib in this.Libraries)
         {
             if (lib == null) continue;
-            {
-                bool IsEnable = true;
-                if (lib.Rules is not null)
-                    foreach (Rule Rule in lib.Rules)
-                    {
-                        IsEnable &= IsRulesEnable(Rule, Features);
-                        if (!IsEnable) break;
-                    }
-
-                Core.Log($"检查库{lib.Name}，启用：{IsEnable}");
-                if (!IsEnable) continue;
-            }
+            if (!Rule.IsRulesEnable(lib.Rules)) continue;
             string LocalPath = Minecraft.GetLocalLibraryPath(lib, minecraft.PublicPath.FullName);
             if (!Directory.Exists(Path.GetDirectoryName(LocalPath))) Directory.CreateDirectory(Path.GetDirectoryName(LocalPath));
             //检查
@@ -352,24 +324,10 @@ public partial class MinecraftRunner
     public void PrepairNativeLibs()
     {
         HasPrepaired = true;
-        Dictionary<string, bool> Features = new();
-        foreach (var i in Extras)
-            if (i.Features is not null)
-                foreach (var f in i.Features)
-                    Features[f.Key] = f.Value;
-        foreach (var lib in Jsons.Libraries)
+        foreach (var lib in this.Libraries)
         {
             if (lib == null) continue;
-            {
-                bool IsEnable = true;
-                if (lib.Rules is not null)
-                    foreach (Rule Rule in lib.Rules)
-                    {
-                        IsEnable &= IsRulesEnable(Rule, Features);
-                        if (!IsEnable) break;
-                    }
-                if (!IsEnable) continue;
-            }
+            if (!Rule.IsRulesEnable(lib.Rules)) continue;
             string LocalPath = Minecraft.GetLocalLibraryPath(lib, minecraft.PublicPath.FullName);
             if (IsNativeLib(lib))
             {
@@ -379,7 +337,7 @@ public partial class MinecraftRunner
             }
         }
     }
-    private static bool IsNativeLib(Library lib) => lib.Natives.Count != 0 || (lib.Name?.Contains(":natives-") ?? false);
+    private static bool IsNativeLib(Library lib) => (lib.Natives is not null && lib.Natives.Count != 0) || (lib.Name?.Contains(":natives-") ?? false);
 
     /// <summary>
     /// 当游戏输出日志时触发
@@ -410,7 +368,7 @@ public partial class MinecraftRunner
         Directory.CreateDirectory(NativeDir);
 
         //加载启动设置
-        Dictionary<string, bool> Features = new();
+        Dictionary<string, bool> Features = [];
         foreach (var i in Extras)
             if (i.Features is not null)
                 foreach (var f in i.Features)
@@ -419,12 +377,8 @@ public partial class MinecraftRunner
         //加载库
         foreach (var lib in Jsons.Libraries)
         {
-            bool IsEnable = true;
-            if (lib.Rules is not null)
-                foreach (Rule Rule in lib.Rules)
-                    if (!(IsEnable &= IsRulesEnable(Rule, Features))) break;
-            if (!IsEnable) continue;
-            if (IsEnable && !IsNativeLib(lib))
+            if (!Rule.IsRulesEnable(lib.Rules, Features)) continue;
+            if (!IsNativeLib(lib))
             {
                 string LocalPath = Minecraft.GetLocalLibraryPath(lib, minecraft.PublicPath.FullName);
                 StartLibrarys.Add(LocalPath);
@@ -458,71 +412,15 @@ public partial class MinecraftRunner
         List<string> JvmArgs = [];
         List<string> GameArgs = [];
         #region 拼接游戏参数
-        foreach (var i in Jsons.Arguments?.JvmArgs ?? throw new MinecraftStartingException("无法解析JVM参数"))
+        foreach (var i in this.JvmArgs)
         {
-            if (i is JValue Val) JvmArgs.Add(Val.ToString());
-            if (i is JObject Object)
-            {
-                if (Object["rules"] is JArray JArray)
-                {
-                    bool IsREnable = true;
-                    foreach (var rule in JArray)
-                    {
-                        Rule? R = rule.ToObject<Rule>();
-                        if (R is null) continue;
-                        IsREnable &= IsRulesEnable(R, Features);
-                        if (!IsREnable) continue;
-                    }
-                    if (!IsREnable) continue;
-                }
-                var value = Object["value"];
-                if (value is null) continue;
-                switch (value)
-                {
-                    case JValue jValue:
-                        JvmArgs.Add(jValue.ToString());
-                        break;
-                    case JArray jArray:
-                        foreach (var jValue in jArray)
-                        {
-                            JvmArgs.Add(jValue.ToString());
-                        }
-                        break;
-                }
-            }
+            if (Rule.IsRulesEnable(i.Rules))
+                JvmArgs.AddRange(i.ArgumentString);
         }
-        foreach (var i in Jsons.Arguments?.GameArgs ?? throw new MinecraftStartingException("无法解析游戏参数"))
+        foreach (var i in this.GameArgs)
         {
-            if (i is JValue Val) GameArgs.Add(Val.ToString());
-            if (i is JObject Object)
-            {
-                if (Object["rules"] is JArray JArray)
-                {
-                    bool IsREnable = true;
-                    foreach (var rule in JArray)
-                    {
-                        Rule? R = rule.ToObject<Rule>();
-                        if (R is null) continue;
-                        IsREnable &= IsRulesEnable(R, Features);
-                        if (!IsREnable) continue;
-                    }
-                    if (!IsREnable) continue;
-                }
-                var value = Object["value"];
-                if (value is null) continue;
-                switch (value)
-                {
-                    case JValue jValue:
-                        GameArgs.Add(jValue.ToString());
-                        break;
-                    case JArray jArray:
-                        foreach (var jValue in jArray)
-                        {
-                            GameArgs.Add(jValue.ToString());
-                        }
-                        break;
-                }
-            }
+            if(Rule.IsRulesEnable(i.Rules))
+                GameArgs.AddRange(i.ArgumentString);
         }
         #endregion
         foreach (var Extra in Extras)
@@ -656,6 +554,6 @@ public partial class MinecraftRunner
     private static MinecraftJsonInfomation LoadMinecraftVersion(FileInfo path)
     {
         using FileStream file = path.OpenRead();
-        return JsonExtensions.DeserializeJson<MinecraftJsonInfomation>(file) ?? throw new JsonException("加载Json失败");
+        return JsonSerializer.Deserialize<MinecraftJsonInfomation>(file) ?? throw new JsonException("加载Json失败");
     }
 }

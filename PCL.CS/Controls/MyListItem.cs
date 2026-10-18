@@ -1,5 +1,4 @@
-﻿using Newtonsoft.Json.Linq;
-using PCL.CS.Modules;
+﻿using PCL.CS.Modules;
 using System;
 using System.Collections.Generic;
 using System.Linq;

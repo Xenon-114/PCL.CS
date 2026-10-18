@@ -1,8 +1,12 @@
-﻿using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
+﻿using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Runtime.InteropServices;
+using System.Text.Json;
+using System.Text.Json.Serialization;
 using System.Threading.Tasks;
+
+using JsonPropertyAttribute = System.Text.Json.Serialization.JsonPropertyNameAttribute;
 
 namespace XeF4Core.MinecraftCore;
 
@@ -60,7 +64,7 @@ public class MinecraftJsonInfomation
     /// 获取或设置所有依赖库的列表（包括第三方库和 natives）。
     /// </summary>
     [JsonProperty("libraries")]
-    public List<Library> Libraries { get; set; } = [];
+    public Library[]? Libraries { get; set; }
 
     /// <summary>
     /// 获取或设置日志配置信息（如 log4j2 配置文件）。
@@ -109,7 +113,7 @@ public class MinecraftJsonInfomation
     /// Patches
     /// </summary>
     [JsonProperty("patches")]
-    public List<Patch> Patches { get; set; } = [];
+    public List<Patch>? Patches { get; set; }//对的，这个可能没有
 
 }
 
@@ -124,20 +128,20 @@ public class Arguments
     /// 每个元素可以是 string 或包含 rules 和 value 的 JObject。
     /// </summary>
     [JsonProperty("game")]
-    public List<JToken> GameArgs { get; set; } = [];
+    public Argument[]? GameArgs { get; set; }
 
     /// <summary>
     /// 获取或设置 JVM 参数列表（传递给 Java 虚拟机的参数）。
     /// 每个元素可以是 string 或包含 rules 和 value 的 JObject。
     /// </summary>
     [JsonProperty("jvm")]
-    public List<JToken> JvmArgs { get; set; } = [];
+    public Argument[]? JvmArgs { get; set; }
     /// <summary>
     /// 获取或设置 JVM 参数列表（传递给 Java 虚拟机的参数）。
     /// 每个元素可以是 string 或包含 rules 和 value 的 JObject。
     /// </summary>
     [JsonProperty("default-user-jvm")]
-    public List<JToken> DefaultUserJvm { get; set; } = [];
+    public Argument[]? DefaultUserJvm { get; set; }
 }
 
 /// <summary>
@@ -245,18 +249,13 @@ public class Library
     /// 获取或设置该库适用的系统规则列表（用于平台过滤）。
     /// </summary>
     [JsonProperty("rules")]
-    public List<Rule> Rules { get; set; } = [];
-    /// <summary>
-    /// 
-    /// </summary>
-    /// <returns></returns>
-    public bool ShouldSerializeRules() => Rules.Count > 0;
+    public Rule[]? Rules { get; set; }
 
     /// <summary>
     /// 获取或设置 natives 的映射表（键为操作系统名，值为对应的 classifier）。
     /// </summary>
     [JsonProperty("natives")]
-    public Dictionary<string, string> Natives { get; set; } = [];
+    public Dictionary<string, string>? Natives { get; set; }
 
     /// <summary>
     /// 获取或设置解压配置（如需要排除的文件）。
@@ -280,7 +279,7 @@ public class LibraryDownloads
     /// 获取或设置分类器下载信息（如 natives 特定平台的 JAR）。
     /// </summary>
     [JsonProperty("classifiers")]
-    public Dictionary<string, Artifact> Classifiers { get; set; } = [];
+    public Dictionary<string, Artifact>? Classifiers { get; set; }
 }
 
 /// <summary>
@@ -329,22 +328,64 @@ public class Rule
     /// </summary>
     [JsonProperty("os")]
     public Os? Os { get; set; }
-    /// <summary>
-    /// 
-    /// </summary>
-    /// <returns></returns>
-    public bool ShouldSerializeOs() => Os is not null;
 
     /// <summary>
     /// 获取或设置特性条件（如 "is_demo_user"）。
     /// </summary>
     [JsonProperty("features")]
-    public Dictionary<string, bool> Features { get; set; } = [];
+    public Dictionary<string, bool>? Features { get; set; }
+
     /// <summary>
-    /// 
+    /// 确认一个规则是否满足
     /// </summary>
-    /// <returns></returns>
-    public bool ShouldSerializeFeatures() => Features.Count > 0;
+    /// <param name="rule"></param>
+    /// <param name="Features"></param>
+    /// <returns>当为<see langword="null"/>时，规则不满足；否则，当规则为allow时，返回<see langword="true"/></returns>
+    public static bool? IsRulesEnable(Rule rule, IReadOnlyDictionary<string, bool>? Features)
+    {
+        bool Use = true;
+        if (rule.Os is not null)
+            if (rule.Os.Name is not null && rule.Os.Name is not OSPlatform.Universal && !RuntimeInformation.IsOSPlatform(((OSPlatform)rule.Os.Name).ToOsPlatform())) Use = false;
+            else if (!Extensions.IsArchMatch(rule.Os.Arch)) Use = false;
+        if (Use && rule.Features is not null && Features is not null)
+            foreach (var feature in rule.Features)
+                if (!Features.TryGetValue(feature.Key, out var value) || value != feature.Value)
+                {
+                    Use = false;
+                    break;
+                }
+
+        return Use ? rule.Action is "allow" : null;
+    }
+    /// <summary>
+    /// 确认一个规则是否满足
+    /// </summary>
+    /// <param name="rule"></param>
+    /// <returns>当为<see langword="null"/>时，规则不满足；否则，当规则为allow时，返回<see langword="true"/></returns>
+    public static bool? IsRulesEnable(Rule rule) => IsRulesEnable(rule, null);
+    /// <summary>
+    /// 确认一组规则是否满足
+    /// </summary>
+    /// <param name="rules"></param>
+    /// <param name="Features"></param>
+    /// <returns>规则的满足情况。为最后一个规则的启用/禁用情况</returns>
+    public static bool IsRulesEnable(Rule[]? rules, IReadOnlyDictionary<string, bool>? Features)
+    {
+        if (rules.IsNullOrEmpty()) return true;
+        bool Use = false;
+        foreach (var rule in rules)
+        {
+            var isUse = IsRulesEnable(rule, Features);
+            if (isUse is not null) Use = (bool)isUse;
+        }
+        return Use;
+    }
+    /// <summary>
+    /// 确认一组规则是否满足
+    /// </summary>
+    /// <param name="rules"></param>
+    /// <returns>规则的满足情况。为最后一个规则的启用/禁用情况</returns>
+    public static bool IsRulesEnable(Rule[]? rules) => IsRulesEnable(rules, null);
 }
 
 /// <summary>
@@ -498,7 +539,7 @@ public class MinecraftDataList
     {
         string local = await HttpServer.DownloadFile(Url);
         string Content = File.ReadAllText(local);
-        var result = JsonConvert.DeserializeObject<MinecraftDataList>(Content);
+        var result = JsonSerializer.Deserialize<MinecraftDataList>(Content,JsonExtensions.MyJsonOptions);
         return result;
     }
     /// <summary>
@@ -513,13 +554,13 @@ public class MinecraftDataList
     /// 最新版本
     /// </summary>
     [JsonProperty("latest")]
-    public Dictionary<string, string> Latest { get; } = new();
+    public Dictionary<string, string>? Latest { get; set; }
 
     /// <summary>
     /// 版本列表
     /// </summary>
     [JsonProperty("versions")]
-    public List<MinecraftVersion> Versions { get; } = new();
+    public List<MinecraftVersion>? Versions { get; set; }
 }
 
 /// <summary>
@@ -546,12 +587,94 @@ public class MinecraftVersion
     /// 获取或设置版本的发布时间（ISO 8601 格式字符串）。
     /// </summary>
     [JsonProperty("releaseTime")]
-    public string? ReleaseTime { get; set; }
+    public DateTimeOffset? ReleaseTime { get; set; }
 
     /// <summary>
     /// 获取或设置版本的更新时间（ISO 8601 格式字符串）。
     /// </summary>
     [JsonProperty("time")]
-    public string? Time { get; set; }
+    public DateTimeOffset? Time { get; set; }
 }
 
+/// <summary>
+/// 表示一个参数。
+/// </summary>
+[JsonConverter(typeof(ArgumentConverter))]
+public class Argument
+{
+    /// <summary>
+    /// 实际参数
+    /// </summary>
+    public string[] ArgumentString { get; }
+    /// <summary>
+    /// 规则
+    /// </summary>
+    public Rule[]? Rules { get; }
+    private Argument(string[] argumentString, Rule[]? rules)
+    {
+        ArgumentString = argumentString;
+        Rules = rules;
+    }
+    /// <summary>
+    /// 你疯了吗看这个玩意
+    /// </summary>
+    internal class ArgumentConverter : JsonConverter<Argument>
+    {
+        public override Argument? Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
+        {
+            if (reader.TokenType is JsonTokenType.String)
+            {
+                return new Argument([reader.GetString().Must()], null);
+            }
+            else if (reader.TokenType is JsonTokenType.StartObject)
+            {
+                using var doc = JsonDocument.ParseValue(ref reader);
+                var root = doc.RootElement;
+                var ArgsElement = root.GetProperty("value");
+                string[] Args;
+                if (ArgsElement.ValueKind is JsonValueKind.String)
+                    Args = [ArgsElement.GetString().Must()];
+                else if (ArgsElement.ValueKind is JsonValueKind.Array)
+                    Args = ArgsElement.Deserialize<string[]>(options).Must();
+                else throw new JsonException($"不支持的格式：{ArgsElement.ValueKind}");
+                Rule[]? rules = null;
+                if (root.TryGetProperty("rules", out var rulesElement))
+                    rules = rulesElement.Deserialize<Rule[]>(options);
+                return new Argument(Args, rules);
+            }
+            else throw new JsonException($"不支持的格式：{reader.TokenType}");
+        }
+        public override void Write(Utf8JsonWriter writer, Argument value, JsonSerializerOptions options)
+        {
+            if (value.Rules.IsNullOrEmpty())
+            {
+                if (value.ArgumentString.Length > 1) throw new ArgumentException("传入的参数不合法", nameof(value));
+                writer.WriteStringValue(value.ArgumentString[0]);
+            }
+            else
+            {
+                writer.WriteStartObject();
+                writer.WritePropertyName("rules");
+                JsonSerializer.Serialize(writer, value.Rules, options);
+                writer.WritePropertyName("value");
+                if (value.ArgumentString.Length > 1)
+                    JsonSerializer.Serialize(writer, value.ArgumentString, options);
+                else JsonSerializer.Serialize(writer, value.ArgumentString[0], options);
+                writer.WriteEndObject();
+            }
+        }
+    }
+    /// <summary>
+    /// 创建一个Argument
+    /// </summary>
+    public static Argument Create(string arg) => new([arg], null);
+    /// <summary>
+    /// 创建一个Argument
+    /// </summary>
+    public static Argument Create(string[] arg, Rule[] rules)
+    {
+        if(arg.IsNullOrEmpty())throw new ArgumentNullException(nameof(arg));
+        if(rules.IsNullOrEmpty())throw new ArgumentNullException(nameof(rules));
+        return new(arg, rules);
+    }
+}

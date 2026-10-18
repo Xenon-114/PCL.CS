@@ -29,7 +29,7 @@ namespace PCL.CS.Controls
         public void Update(object sender, EventArgs args)
         {
             if (ListItemsHeight is 0) throw new InvalidOperationException("必须完成初始化");
-            if (Datas is null) throw new InvalidOperationException("必须完成初始化");
+            if (Datas is null || Datas.Count == 0) throw new InvalidOperationException("必须完成初始化");
             if (Conventer is null) throw new InvalidOperationException("必须完成初始化");
 
             var offset = this.TranslatePoint(new Point(0, 0), ClipParent);

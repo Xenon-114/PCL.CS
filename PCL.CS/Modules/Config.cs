@@ -1,4 +1,4 @@
-﻿using Newtonsoft.Json;
+﻿using System.Text.Json;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -40,7 +40,7 @@ namespace PCL.CS.Modules
                 if (File.Exists(ConfigPath))
                 {
                     using var FileSteam = File.OpenRead(ConfigPath);
-                    _Current = XeF4Core.JsonExtensions.DeserializeJson<Config>(FileSteam) ?? new Config();
+                    _Current = JsonSerializer.Deserialize<Config>(FileSteam) ?? new Config();
                 }
                 else _Current = new Config();
         }
@@ -50,7 +50,7 @@ namespace PCL.CS.Modules
         public static void Save()
         {
             lock (Locker)
-                File.WriteAllText(ConfigPath, JsonConvert.SerializeObject(Current));
+                File.WriteAllText(ConfigPath, JsonSerializer.Serialize(Current));
         }
 
         /// <summary>

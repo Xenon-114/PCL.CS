@@ -93,7 +93,7 @@ namespace PCL.CS.Pages
             {
                 Element.Opacity = 0;
             }
-            //if (!HasList) Load();
+            if (!HasList) Load();
         }
         private bool HasList = false;
         private bool IsLoading = false;
@@ -116,7 +116,7 @@ namespace PCL.CS.Pages
                 static void Converter(ref MyClickableItem l,MinecraftVersion item)
                 {
                     l.Title = item.Id;
-                    l.Info = $"{DateTime.Parse(item.ReleaseTime)} | {item.Type}";
+                    l.Info = $"{(item.ReleaseTime?.LocalDateTime)} | {item.Type}";
                     l.UseImage = true;
                     l.Height = 50;
                     l.AutoCheck = false;

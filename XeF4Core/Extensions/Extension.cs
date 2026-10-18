@@ -1,4 +1,4 @@
-﻿using Newtonsoft.Json;
+﻿using System.Text.Json;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -7,6 +7,9 @@ using System.Security.Cryptography;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+
+using JsonPropertyAttribute = System.Text.Json.Serialization.JsonPropertyNameAttribute;
+using System.Text.Json.Serialization;
 
 namespace XeF4Core;
 
@@ -125,7 +128,17 @@ public static class Extensions
     /// <typeparam name="T">数组储存的类型</typeparam>
     /// <param name="Array">数组</param>
     /// <returns></returns>
-    public static bool IsNullOrEmpty<T>(this T[]? Array) => Array is null || Array.Length == 0;
+    public static bool IsNullOrEmpty<T>([System.Diagnostics.CodeAnalysis.NotNullWhen(false)] this T[]? Array) => Array is null || Array.Length == 0;
+    /// <summary>
+    /// 对一个可空类型进行非空断言
+    /// </summary>
+    /// <typeparam name="T"></typeparam>
+    /// <param name="value"></param>
+    /// <param name="name"></param>
+    /// <returns></returns>
+    /// <exception cref="NullReferenceException"></exception>
+    public static T Must<T>([System.Diagnostics.CodeAnalysis.NotNull] this T? value, [CallerArgumentExpression(nameof(value))] string? name = null) where T : class => value ?? throw new NullReferenceException($"{name}引用为null");
+
     /// <summary>
     /// 修改VersionCode
     /// </summary>
@@ -134,8 +147,8 @@ public static class Extensions
     /// <param name="Minor"></param>
     /// <param name="Patch"></param>
     /// <param name="Revision"></param>
-    public static void With(ref this VersionCode version, int? Major = null, int? Minor = null, int? Patch = null, int? Revision = null) =>
-        version = new VersionCode(Major ?? version.Major, Minor ?? version.Minor, Patch ?? version.Patch, Revision ?? version.Revision);
+    public static VersionCode With(this VersionCode version, int? Major = null, int? Minor = null, int? Patch = null, int? Revision = null) =>
+        new(Major ?? version.Major, Minor ?? version.Minor, Patch ?? version.Patch, Revision ?? version.Revision);
 
     private static readonly Dictionary<System.Runtime.InteropServices.OSPlatform, OSPlatform> OsPlatformDic = new()
     {
@@ -406,7 +419,7 @@ public readonly struct VersionCode : IComparable<VersionCode>, IComparable, IEqu
 /// 值类型包装类
 /// </summary>
 /// <typeparam name="T">指定的值</typeparam>
-public class Reference‌<T> where T : struct
+public class Reference<T> where T : struct
 {
     /// <summary>
     /// 值
@@ -467,6 +480,7 @@ public enum BuildType
 /// <summary>
 /// 操作系统平台信息
 /// </summary>
+[JsonConverter(typeof(JsonExtensions.EnumConverter<OSPlatform>))]
 public enum OSPlatform
 {
     /// <summary>
@@ -493,7 +507,7 @@ public enum OSPlatform
     /// 任意
     /// </summary>
     [JsonProperty("universal")]
-    Universal = 3 // 或者也可以映射到 Windows 或 null，但最好加上
+    Universal = 3
 }
 /// <summary>
 /// 标识程序架构

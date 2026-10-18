@@ -6,7 +6,7 @@
         xmlns:local="clr-namespace:PCL.CS.Controls"
         WindowStyle="SingleBorderWindow"
         mc:Ignorable="d"
-        Title="MainWindow"
+        Title="PCL C# Edition"
         MinHeight="510"
         MinWidth="840"
         Height="570"

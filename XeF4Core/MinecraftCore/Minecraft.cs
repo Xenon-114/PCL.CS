@@ -1,4 +1,4 @@
-﻿using Newtonsoft.Json;
+﻿using System.Text.Json;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -81,13 +81,13 @@ public class Minecraft : IDisposable
     }
     private void ChangeJson()
     {
-        File.WriteAllText(JsonPath.FullName, JsonConvert.SerializeObject(MinecraftJson, Formatting.Indented));
+        File.WriteAllText(JsonPath.FullName, JsonSerializer.Serialize(MinecraftJson,JsonExtensions.MyJsonOptions));
         _LastJsonChanged = JsonPath.LastWriteTime;
     }
     private void RefreshJson()
     {
         using FileStream file = JsonPath.OpenRead();
-        var json = JsonExtensions.DeserializeJson<MinecraftJsonInfomation>(file) ?? throw new JsonException($"无法解析位于 {JsonPath.FullName} 的Json！");
+        var json = JsonSerializer.Deserialize<MinecraftJsonInfomation>(file) ?? throw new JsonException($"无法解析位于 {JsonPath.FullName} 的Json！");
         _Json = json;
     }
     private MinecraftJsonInfomation _Json;
@@ -303,50 +303,40 @@ public class Minecraft : IDisposable
                 tasks.downloads.Add(dltsk);
             }
         }
-        foreach (var lib in MinecraftJson.Libraries)
-        {
-            if (lib == null) continue;
+        if (MinecraftJson.Libraries is not null)
+            foreach (var lib in MinecraftJson.Libraries)
             {
-                bool IsEnable = true;
-                if (lib.Rules is not null)
-                    foreach (Rule Rule in lib.Rules)
+                if (lib == null) continue;
+                if (!Rule.IsRulesEnable(lib.Rules)) continue;
+                string LocalPath = GetLocalLibraryPath(lib, PublicPath.FullName);
+                if (!Directory.Exists(Path.GetDirectoryName(LocalPath))) Directory.CreateDirectory(Path.GetDirectoryName(LocalPath));
+                //检查
+                bool needsDownload = !File.Exists(LocalPath);
+                if (!needsDownload && lib.Downloads?.Artifact?.Sha1 != null)
+                {
+                    try
                     {
-                        IsEnable &= IsRulesEnable(Rule);
-                        if (!IsEnable) break;
+                        string actualSha1 = ComputeFileSha1(LocalPath);
+                        needsDownload = actualSha1 != lib.Downloads.Artifact.Sha1;
+                    }
+                    catch
+                    {
+                        needsDownload = true; // 读不了就当需要重下
                     }
 
-                Core.Log($"检查库{lib.Name}，启用：{IsEnable}");
-                if (!IsEnable) continue;
-            }
-            string LocalPath = GetLocalLibraryPath(lib, PublicPath.FullName);
-            if (!Directory.Exists(Path.GetDirectoryName(LocalPath))) Directory.CreateDirectory(Path.GetDirectoryName(LocalPath));
-            //检查
-            bool needsDownload = !File.Exists(LocalPath);
-            if (!needsDownload && lib.Downloads?.Artifact?.Sha1 != null)
-            {
-                try
-                {
-                    string actualSha1 = ComputeFileSha1(LocalPath);
-                    needsDownload = actualSha1 != lib.Downloads.Artifact.Sha1;
                 }
-                catch
+                if (needsDownload)
                 {
-                    needsDownload = true; // 读不了就当需要重下
-                }
-
-            }
-            if (needsDownload)
-            {
-                if (File.Exists(LocalPath))
-                    File.Delete(LocalPath);
-                //不给我下就跳过
-                if (lib.Downloads?.Artifact?.Url is not null)
-                {
-                    var dltsk = downloader.Download(lib.Downloads.Artifact.Url, LocalPath);
-                    tasks.downloads.Add(dltsk);
+                    if (File.Exists(LocalPath))
+                        File.Delete(LocalPath);
+                    //不给我下就跳过
+                    if (lib.Downloads?.Artifact?.Url is not null)
+                    {
+                        var dltsk = downloader.Download(lib.Downloads.Artifact.Url, LocalPath);
+                        tasks.downloads.Add(dltsk);
+                    }
                 }
             }
-        }
         return tasks;
     }
     /// <summary>
@@ -380,7 +370,7 @@ public class Minecraft : IDisposable
                     await downloader.Download(indexUrl, indexPath);
                 Core.Log($"下载资源索引文件完成");
                 using var fStream = File.OpenRead(indexPath);
-                var Index = JsonExtensions.DeserializeJson<MinecraftAssetsIndex>(fStream);
+                var Index = JsonSerializer.Deserialize<MinecraftAssetsIndex>(fStream);
                 if (Index is null) return;
                 var objectPath = Path.Combine(PublicPath.FullName, "assets", "objects");
                 if (!Directory.Exists(objectPath)) Directory.CreateDirectory(objectPath);
@@ -406,21 +396,6 @@ public class Minecraft : IDisposable
             else throw new JsonException($"未能解析以下两者之一的值：{nameof(MinecraftJson.AssetIndex.Url)}/{nameof(MinecraftJson.AssetIndex.Sha1)}");
         }
         else throw new JsonException($"未能解析以下值：{nameof(MinecraftJson.AssetIndex)}");
-    }
-
-    private static bool IsRulesEnable(Rule rule)
-    {
-        //{
-        //    Console.WriteLine("规则");
-        //    if (rule.Os is not null) Console.WriteLine($"适用于平台{rule.Os.Name.ToString()}，架构{rule.Os.Arch?.ToString()??"任意"}");
-        //}
-        bool Used = true;
-        if (rule.Os is not null)
-            if (rule.Os.Name is not null && rule.Os.Name is not OSPlatform.Universal && !RuntimeInformation.IsOSPlatform(((OSPlatform)rule.Os.Name).ToOsPlatform())) Used = false;
-            else if (!Extensions.IsArchMatch(rule.Os.Arch)) Used = false;
-
-        if (rule.Action is "disallow") Used = !Used;
-        return Used;
     }
 
     /// <summary>
@@ -648,10 +623,10 @@ public class Minecraft : IDisposable
             }
             //1、预先修改Json文件
             {
-                MinecraftJsonInfomation jsonInfomation = JsonConvert.DeserializeObject<MinecraftJsonInfomation>(File.ReadAllText(JsonPath)) ?? new();
+                MinecraftJsonInfomation jsonInfomation = JsonSerializer.Deserialize<MinecraftJsonInfomation>(File.ReadAllText(JsonPath)) ?? new();
                 jsonInfomation.ClientVersion = jsonInfomation.Id;
                 jsonInfomation.Id = Name;
-                File.WriteAllText(JsonPath, JsonConvert.SerializeObject(jsonInfomation));
+                File.WriteAllText(JsonPath, JsonSerializer.Serialize(jsonInfomation));
             }
             mc = FromJsonPath(JsonPath);
             mc.PublicPath = PublicPath;
