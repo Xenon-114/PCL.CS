@@ -224,7 +224,7 @@ public class Minecraft : IDisposable
             return Task;
         }
     }
-    private class AssetsCheckTask : IMyTask
+    private class AssetsDownloadTask : IMyTask
     {
         public double Progress
         {
@@ -354,7 +354,7 @@ public class Minecraft : IDisposable
     public IMyTask AssetsChecks(Downloader downloader)
     {
         ThrowIfNotAvailable();
-        AssetsCheckTask assetsCheck = new();
+        AssetsDownloadTask assetsCheck = new();
         if (MinecraftJson.AssetIndex is not null)
         {
             //1、解析映射
@@ -532,30 +532,6 @@ public class Minecraft : IDisposable
     private CancellationTokenSource Cancellation { get; set; } = new();
 
     /// <summary>
-    /// 下载任务
-    /// </summary>
-    public class MinecraftDownloadTask : IMyTaskList
-    {
-#pragma warning disable CS1591 // 缺少对公共可见类型或成员的 XML 注释
-        public IReadOnlyList<IMyTask> Children => _tasks;
-        internal readonly List<IMyTask> _tasks = [];
-        public double Progress { get; }
-        public string Name { get; set; } = "下载Minecraft";
-        internal readonly TaskCompletionSource<object?> Finishing = new();
-        private Task? Waiter = null;
-        public TaskAwaiter GetAwaiter() => (Finishing.Task as Task).GetAwaiter();
-
-        public void Wait() => Finishing.Task.Wait();
-        public Task WaitAsync()
-        {
-            Waiter ??= Task.Run(async () => { await Finishing.Task; });
-            return Waiter;
-        }
-        internal readonly TaskCompletionSource<Minecraft> Mc = new();
-        public Minecraft Minecraft => Mc.Task.Result;
-#pragma warning restore CS1591 // 缺少对公共可见类型或成员的 XML 注释
-    }
-    /// <summary>
     /// 下载一个版本
     /// </summary>
     /// <param name="version">版本</param>
@@ -723,4 +699,30 @@ public interface IMinecraftRunnerExtra
     /// 拓展中的特性。可标明启用或不启用。
     /// </summary>
     public KeyValuePair<string, bool>[]? Features { get; }
+}
+
+/// <summary>
+/// 下载任务
+/// </summary>
+public class MinecraftDownloadTask : IMyTaskList
+{
+#pragma warning disable CS1591 // 缺少对公共可见类型或成员的 XML 注释
+    IReadOnlyList<IMyTask> IMyTaskList.Children => _tasks;
+    internal readonly List<IMyTask> _tasks = [];
+    public double Progress { get; }
+    public string Name { get; set; } = "下载Minecraft";
+    internal readonly TaskCompletionSource<object?> Finishing = new();
+    private Task? Waiter = null;
+    public TaskAwaiter GetAwaiter() => (Finishing.Task as Task).GetAwaiter();
+
+    public void Wait() => Finishing.Task.Wait();
+    public Task WaitAsync()
+    {
+        Waiter ??= Task.Run(async () => { await Finishing.Task; });
+        return Waiter;
+    }
+    internal readonly TaskCompletionSource<Minecraft> Mc = new();
+    public Minecraft Minecraft => Mc.Task.Result;
+
+#pragma warning restore CS1591 // 缺少对公共可见类型或成员的 XML 注释
 }

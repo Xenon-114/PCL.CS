@@ -195,10 +195,6 @@ namespace PCL.CS.Controls
             get => _Checked;
             set
             {
-                if (value)
-                {
-                    RadioGroup.SelectedItem = this;
-                }
                 _Checked = value;
                 if (value) RaiseEvent(new RoutedEventArgs(CheckedEvent));
                 if (!this.IsLoaded || this.Background is null || this.Foreground is null) return;
@@ -223,21 +219,18 @@ namespace PCL.CS.Controls
 
         public MyRadioGroup RadioGroup
         {
-            get => _RadioGroup;
-            set
-            {
-                if (_RadioGroup == value) return;
-                if (_RadioGroup != null)
-                {
-                    _RadioGroup.RemoveChild(this);
-                }
-                if (value != null)
-                {
-                    _RadioGroup.AddChild(this);
-                }
-                _RadioGroup = value;
-            }
+            get { return (MyRadioGroup)GetValue(RadioGroupProperty); }
+            set { SetValue(RadioGroupProperty, value); }
         }
-        private MyRadioGroup _RadioGroup = new MyRadioGroup();
+
+        // Using a DependencyProperty as the backing store for RadioGroup.  This enables animation, styling, binding, etc...
+        public static readonly DependencyProperty RadioGroupProperty =
+            DependencyProperty.Register(nameof(RadioGroup), typeof(MyRadioGroup), typeof(MyRadioButton), new PropertyMetadata((s, e) => (s as MyRadioButton)?.OnRadioGroupChanged(e)));
+
+        private void OnRadioGroupChanged(DependencyPropertyChangedEventArgs e)
+        {
+            (e.OldValue as MyRadioGroup)?.RemoveChild(this);
+            (e.NewValue as MyRadioGroup)?.AddChild(this);
+        }
     }
 }

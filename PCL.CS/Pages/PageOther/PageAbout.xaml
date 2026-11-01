@@ -60,6 +60,7 @@
                         <local:MyImage Source="{DynamicResource Image.Icon.svg}"/>
                         <local:MyTextBox Hint="abc" IsEnabled="False"/>
                         <local:MyListItem Height="50" AutoCheck="True"/>
+                        <local:MyCheckableBox Text="这是个测试"/>
                     </StackPanel>
                 </local:MyCard>
             </StackPanel>

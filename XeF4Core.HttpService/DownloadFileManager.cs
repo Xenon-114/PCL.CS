@@ -12,7 +12,7 @@ internal class DownloadFileManager
     private string _downloadFilePath;
     private string _filePath;
     private FileStream? Stream { get; }
-    private DownloadPackage Package { get; }
+    private DownloadPackage? Package { get; }
     public DownloadFileManager(string path,DownloadTaskSettings settings)
     {
         var dirurl = Path.GetDirectoryName(path);
@@ -35,7 +35,7 @@ internal class DownloadFileManager
     }
     private DownloadPackage GetPackage(Stream stream)
     {
-        stream.Seek(0, SeekOrigin.End);
-
+        stream.Seek(-2, SeekOrigin.End);
+        stream
     }
 }

@@ -40,6 +40,7 @@ namespace PCL.CS.Controls
                 _Swapped = value;
                 if (ContentPre != null)
                     ContentPre.IsHitTestVisible = !value;
+                if (!value && ContentPre is not null) ContentPre.Visibility = Visibility.Visible;
                 MainRefresh();
             }
         }
@@ -69,7 +70,7 @@ namespace PCL.CS.Controls
         private Path Arrow { get; set; }
 
         #region 主刷新逻辑
-        private double _ContentHeight;
+        private double _ContentHeight = 0;
         private void MainRefresh(bool UsingAnim = true)
         {
             if (!this.IsLoaded || !this.IsVisible) UsingAnim = false;
@@ -109,6 +110,8 @@ namespace PCL.CS.Controls
                     Animation.Stop(HeightChangeAnim);
                     _ContentHeight = ContentHeight;
                     ContentAnimHeight = ContentHeight;
+                    if (IsSwapped) ContentPre.Visibility = Visibility.Collapsed;
+                    else ContentPre.Visibility = Visibility.Visible;
                 }
             }
         }
@@ -210,9 +213,10 @@ namespace PCL.CS.Controls
                 this.ContentAnimHeight = this.ContentHeight;
                 return;
             }
+            if (this.ContentHeight != 0) ContentPre.Visibility = Visibility.Visible;
             HeightChangeAnim = new AnimationGroup();
-            HeightChangeAnim.TotalTime = TimeSpan.FromMilliseconds(HeightChangeAnimLenth);
             HeightChangeAnim.Add(new DoubleAnimation(this, ContentAnimHeightProperty, this.ContentAnimHeight, this.ContentHeight, HeightChangeAnimLenth, 0, new AniEaseOutFluent(3)));
+            if (this.ContentHeight == 0) HeightChangeAnim.Add(new EventAnimation(HeightChangeAnimLenth, () => ContentPre.Visibility = Visibility.Collapsed));
             Animation.Start(HeightChangeAnim);
         }
         private AnimationGroup BtnRotateAnim;

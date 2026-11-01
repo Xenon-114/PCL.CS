@@ -5,7 +5,7 @@
     <TargetFramework>net472</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <UseWPF>true</UseWPF>
-	<LangVersion>10.0</LangVersion>
+	<LangVersion>14.0</LangVersion>
 	<Configurations>Debug;Release;Alpha;Beta</Configurations>
 	<PlatformTarget>AnyCPU</PlatformTarget>
 	<SignAssembly>False</SignAssembly>

@@ -105,6 +105,7 @@ namespace PCL.CS.Pages
             try
             {
                 var List = await MinecraftDataList.GetDataList();
+                Main.Hint("加载已完成");
                 DataList.Children.Clear();
                 MyVirtualPanel<MinecraftVersion> VPanel;
                 VPanel = new MyVirtualPanel<MinecraftVersion>()

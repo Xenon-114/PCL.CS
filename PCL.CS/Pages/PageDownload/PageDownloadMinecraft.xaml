@@ -8,7 +8,7 @@
              d:DesignHeight="450" d:DesignWidth="800">
     <local:MyScrollViewer x:Name="MainScroll">
         <StackPanel x:Name="MainStackPanel">
-            <local:MyCard Margin="25" x:Name="MainCard" Title="版本列表" CanSwap="False">
+            <local:MyCard Margin="25" x:Name="MainCard" Title="版本列表" CanSwap="True" IsSwapped="True">
                 <StackPanel x:Name="DataList"/>
             </local:MyCard>
         </StackPanel>

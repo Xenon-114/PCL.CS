@@ -626,4 +626,26 @@
 
     </Style>
 
+    <Style TargetType="{x:Type local:MyCheckableBox}">
+        <Setter Property="ForeColorNormal" Value="{DynamicResource ColorObject1}"/>
+        <Setter Property="ForeColorOver" Value="{DynamicResource ColorObject3}"/>
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="{x:Type local:MyCheckableBox}">
+                    <Grid Background="Transparent" MinWidth="20" Height="20">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="20"/>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+                        <Border IsHitTestVisible="False" Grid.Column="0" x:Name="PART_Border" BorderThickness="1.1" HorizontalAlignment="Center" VerticalAlignment="Center" Width="18" Height="18" Background="{DynamicResource ColorBrushHalfWhite}" CornerRadius="1000" RenderTransformOrigin="0.5,0.5" />
+                        <Ellipse IsHitTestVisible="False" Grid.Column="0" x:Name="PART_Dot" HorizontalAlignment="Center" VerticalAlignment="Center" Width="9" Height="9" Opacity="0" StrokeThickness="0" RenderTransformOrigin="0.5,0.5" />
+                        <TextBlock IsHitTestVisible="False" Grid.Column="1" x:Name="PART_Text" FontSize="13" Padding="0" Margin="6,0,0,0" VerticalAlignment="Center" Text="{TemplateBinding Text}"/>
+                    </Grid>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+        <Setter Property="CanAutoUnSelect" Value="True"/>
+    </Style>
+
 </ResourceDictionary>

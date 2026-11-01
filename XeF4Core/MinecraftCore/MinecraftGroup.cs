@@ -149,7 +149,7 @@ public class MinecraftGroup : IDisposable,IEnumerable<Minecraft>,IEnumerable
     {
         ThrowIfNotAvailable();
         DirectoryInfo directory = new(Path.Combine(MinecraftDirectory.FullName, Name));
-        Minecraft.MinecraftDownloadTask result = Minecraft.Download(version, Name, downloader, directory, MinecraftDirectory);
+        MinecraftDownloadTask result = Minecraft.Download(version, Name, downloader, directory, MinecraftDirectory);
         result.Mc.Task.GetAwaiter().OnCompleted(() => this.minecrafts.Add(result.Minecraft));
         return result;
     }

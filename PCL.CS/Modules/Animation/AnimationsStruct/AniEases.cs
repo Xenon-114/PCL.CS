@@ -9,7 +9,7 @@ namespace PCL.CS.Modules
 {
     public class AniEaseLinear : AniEase
     {
-        public AniEaseLinear() { }
+        public static AniEaseLinear Shared { get => field ??= new AniEaseLinear(); }
         public override double GetValue(double t)
         {
             t = MathHelper.Clamp(t, 0, 1);
@@ -39,13 +39,13 @@ namespace PCL.CS.Modules
         public override double GetValue(double t)
         {
             t = MathHelper.Clamp(t, 0, 1);
-            return 1.0-Math.Pow(1.0-t, _power);
+            return 1.0 - Math.Pow(1.0 - t, _power);
         }
     }
     public class AniEaseInBack : AniEase
     {
         private readonly double _power;
-        public AniEaseInBack(double Power=2)
+        public AniEaseInBack(double Power = 2)
         {
             _power = 3 - Power * 0.5;
         }
@@ -65,13 +65,13 @@ namespace PCL.CS.Modules
         public override double GetValue(double t)
         {
             t = MathHelper.Clamp(t, 0, 1);
-            return 1 - Math.Pow(1 - t,_power) * Math.Cos(1.5 * Math.PI * t);
+            return 1 - Math.Pow(1 - t, _power) * Math.Cos(1.5 * Math.PI * t);
         }
     }
     public class AniEaseInElastic : AniEase
     {
         private readonly double _power;
-        public AniEaseInElastic(double Power=2)
+        public AniEaseInElastic(double Power = 2)
         {
             _power = Power;
         }
@@ -109,20 +109,22 @@ namespace PCL.CS.Modules
             return (1 - _speed) * Math.Pow(t, _power) + _speed * t;
         }
     }
-    public class AniEaseInSine:AniEase
+    public class AniEaseInSine : AniEase
     {
+        public static AniEaseInSine Shared { get => field ??= new AniEaseInSine(); }
         public override double GetValue(double t)
         {
             t = MathHelper.Clamp(t, 0, 1);
-            return 1 - Math.Cos(0.5*t * Math.PI);
+            return 1 - Math.Cos(0.5 * t * Math.PI);
         }
     }
     public class AniEaseOutSine : AniEase
     {
+        public static AniEaseOutSine Shared { get => field ??= new AniEaseOutSine(); }
         public override double GetValue(double t)
         {
             t = MathHelper.Clamp(t, 0, 1);
-            return Math.Sin(0.5*t * Math.PI);
+            return Math.Sin(0.5 * t * Math.PI);
         }
     }
     public class AniEaseAdd : AniEase
@@ -140,7 +142,7 @@ namespace PCL.CS.Modules
         }
         public override double GetValue(double t)
         {
-            return Ease1.GetValue(t)*Add1 + Ease2.GetValue(t)*Add2;
+            return Ease1.GetValue(t) * Add1 + Ease2.GetValue(t) * Add2;
         }
     }
     public class AniEaseInOut : AniEase
@@ -149,7 +151,7 @@ namespace PCL.CS.Modules
         private readonly AniEase _easeOut;
         private readonly double _middle;
         private readonly double _midValue;
-        public AniEaseInOut(AniEase EaseIn, AniEase EaseOut, double middle = 0.5,double midValue=0.5)
+        public AniEaseInOut(AniEase EaseIn, AniEase EaseOut, double middle = 0.5, double midValue = 0.5)
         {
             _easeIn = EaseIn;
             _easeOut = EaseOut;
@@ -166,8 +168,16 @@ namespace PCL.CS.Modules
             }
             else
             {
-                return (1- _midValue) * _easeOut.GetValue((t - _middle) / (1 - _middle)) + _middle;
+                return (1 - _midValue) * _easeOut.GetValue((t - _middle) / (1 - _middle)) + _middle;
             }
+        }
+    }
+    public class AniEaseSine : AniEase
+    {
+        public static AniEaseSine Shared { get => field ??= new AniEaseSine(); }
+        public override double GetValue(double t)
+        {
+            return Math.Cos(Math.PI * (t + 1)) / 2 + 0.5;
         }
     }
 }
