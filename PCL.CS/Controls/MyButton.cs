@@ -112,6 +112,7 @@ namespace PCL.CS.Controls
             OnMyButtonLoaded();
             BorderColorMixer.ColorARatio = 1;
             BackColorMixer.ColorARatio = 1;
+            this.IsEnabledChanged += (s, e) => ColorUpdate();
         }
 
         public override void OnApplyTemplate()
@@ -192,25 +193,26 @@ namespace PCL.CS.Controls
         private AnimationGroup ColorAnimation;
         private void ColorUpdate()
         {
-            if (!this.IsLoaded) return;
+            double UseAnim = 1;
+            if (!this.IsLoaded) UseAnim = 0;
             ColorAnimation?.StopAnimation();
             ColorAnimation = new AnimationGroup();
             if (!this.IsEnabled)
             {
-                ColorAnimation.Add(new DoubleAnimation(BorderFinalMixer, ColorMixer.ColorARatioProperty, BorderFinalMixer.ColorARatio, 0, 200, 0));
-                ColorAnimation.Add(new DoubleAnimation(BackColorMixer, ColorMixer.ColorARatioProperty, BackColorMixer.ColorARatio, 1, 200, 0));
+                ColorAnimation.Add(new DoubleAnimation(BorderFinalMixer, ColorMixer.ColorARatioProperty, BorderFinalMixer.ColorARatio, 0, 200 * UseAnim, 0));
+                ColorAnimation.Add(new DoubleAnimation(BackColorMixer, ColorMixer.ColorARatioProperty, BackColorMixer.ColorARatio, 1, 200 * UseAnim, 0));
             }
             else if (this.IsMouseOver)
             {
-                ColorAnimation.Add(new DoubleAnimation(BorderFinalMixer, ColorMixer.ColorARatioProperty, BorderFinalMixer.ColorARatio, 1, 200, 0));
-                ColorAnimation.Add(new DoubleAnimation(BorderColorMixer, ColorMixer.ColorARatioProperty, BorderColorMixer.ColorARatio, 0, 100, 0));
-                ColorAnimation.Add(new DoubleAnimation(BackColorMixer, ColorMixer.ColorARatioProperty, BackColorMixer.ColorARatio, 0, 100, 0));
+                ColorAnimation.Add(new DoubleAnimation(BorderFinalMixer, ColorMixer.ColorARatioProperty, BorderFinalMixer.ColorARatio, 1, 200 * UseAnim, 0));
+                ColorAnimation.Add(new DoubleAnimation(BorderColorMixer, ColorMixer.ColorARatioProperty, BorderColorMixer.ColorARatio, 0, 100 * UseAnim, 0));
+                ColorAnimation.Add(new DoubleAnimation(BackColorMixer, ColorMixer.ColorARatioProperty, BackColorMixer.ColorARatio, 0, 100 * UseAnim, 0));
             }
             else
             {
-                ColorAnimation.Add(new DoubleAnimation(BorderFinalMixer, ColorMixer.ColorARatioProperty, BorderFinalMixer.ColorARatio, 1, 200, 0));
-                ColorAnimation.Add(new DoubleAnimation(BorderColorMixer, ColorMixer.ColorARatioProperty, BorderColorMixer.ColorARatio, 1, 300, 0));
-                ColorAnimation.Add(new DoubleAnimation(BackColorMixer, ColorMixer.ColorARatioProperty, BackColorMixer.ColorARatio, 1, 300, 0));
+                ColorAnimation.Add(new DoubleAnimation(BorderFinalMixer, ColorMixer.ColorARatioProperty, BorderFinalMixer.ColorARatio, 1, 200 * UseAnim, 0));
+                ColorAnimation.Add(new DoubleAnimation(BorderColorMixer, ColorMixer.ColorARatioProperty, BorderColorMixer.ColorARatio, 1, 300 * UseAnim, 0));
+                ColorAnimation.Add(new DoubleAnimation(BackColorMixer, ColorMixer.ColorARatioProperty, BackColorMixer.ColorARatio, 1, 300 * UseAnim, 0));
             }
             ColorAnimation.StartAnimation();
         }

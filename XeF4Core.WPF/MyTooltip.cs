@@ -1,4 +1,5 @@
 ﻿using System;
+using System.ComponentModel;
 using System.Diagnostics;
 using System.Runtime.CompilerServices;
 using System.Windows;
@@ -21,7 +22,6 @@ namespace XeF4Core.WPF;
 public sealed class MyTooltip : DependencyObject
 {
     #region 样式画刷
-#pragma warning disable CS1591
     public Brush Background
     {
         get => (Brush)GetValue(BackgroundProperty);
@@ -218,11 +218,11 @@ public sealed class MyTooltip : DependencyObject
             }
             if (sender is not FrameworkElement fe || !ReferenceEquals(fe, UsingTarget)) return;
 
-            if (_PointInside(fe, Mouse.GetPosition(fe)))
-            {
-                // e.Handled = true;
-                return;
-            }
+            //if (_PointInside(fe, Mouse.GetPosition(fe)))
+            //{
+            //    // e.Handled = true;
+            //    return;
+            //}
 
             var next = _SeekOwner(_Over());
             if (next is not null && !ReferenceEquals(next, Target))
@@ -434,6 +434,7 @@ public sealed class MyTooltip : DependencyObject
                 _flyout!.IsOpen = false;
                 Target = null;
                 _followLoop.Stop();
+                _RemoveBindContent();
             }
         }
     }
@@ -459,7 +460,8 @@ public sealed class MyTooltip : DependencyObject
             {
                 _followLoop.Start();
                 State = ToolTipState.Showing;
-                _RenderInside(Target);
+                //_RenderInside(Target);
+                _BindContent(Target);
                 _PlaceNear();
                 _flyout!.IsOpen = true;
                 OpenStory?.Begin();
@@ -580,6 +582,27 @@ public sealed class MyTooltip : DependencyObject
     #endregion
 
     #region 内容渲染
+    private DependencyPropertyDescriptor? _dpd;
+    private FrameworkElement? _dpdTarget;
+
+    private void _BindContent(FrameworkElement owner)
+    {
+        _RemoveBindContent();
+        _dpdTarget = owner;
+        _dpd!.AddValueChanged(owner, _OnContentChanged);
+        _RenderInside(owner);
+    }
+    private void _RemoveBindContent()
+    {
+        _dpd ??= DependencyPropertyDescriptor.FromProperty(FrameworkElement.ToolTipProperty, typeof(FrameworkElement));
+        if (_dpdTarget is not null)
+            _dpd.RemoveValueChanged(_dpdTarget, _OnContentChanged);
+    }
+
+    private void _OnContentChanged(object sender, EventArgs e)
+    {
+        _RenderInside(_dpdTarget!);
+    }
 
     private void _RenderInside(FrameworkElement owner)
     {
@@ -597,16 +620,16 @@ public sealed class MyTooltip : DependencyObject
 
         if (content is string text && !hasTpl)
         {
-            var tb = new TextBlock
-            {
-                Text = text,
-                TextWrapping = TextWrapping.Wrap,
-                Margin = _innerPad,
-                FontSize = TipFontSize,
-                LineHeight = TipLineHeight,
-                MaxWidth = tipW,
-                Foreground = SystemColors.ControlTextBrush
-            };
+            var tb = InnerBlock;
+
+            InnerBlock.Text = text;
+            InnerBlock.TextWrapping = TextWrapping.Wrap;
+            InnerBlock.Margin = _innerPad;
+            InnerBlock.FontSize = TipFontSize;
+            InnerBlock.LineHeight = TipLineHeight;
+            InnerBlock.MaxWidth = tipW;
+            InnerBlock.Foreground = SystemColors.ControlTextBrush;
+            
             _shell.Child = tb;
         }
         else
@@ -622,6 +645,8 @@ public sealed class MyTooltip : DependencyObject
             };
         }
     }
+
+    private TextBlock InnerBlock => field ??= new();
 
     #endregion
 

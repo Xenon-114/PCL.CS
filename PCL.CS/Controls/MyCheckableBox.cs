@@ -14,7 +14,7 @@ using XeF4Core.WPF;
 
 namespace PCL.CS.Controls
 {
-    public class MyCheckableBox : Control, IMyRadio
+    public abstract class MyCheckableBox : Control
     {
 
         public string Text
@@ -114,7 +114,6 @@ namespace PCL.CS.Controls
             BorderFinalMixer.SetResourceReference(ColorMixer.ColorAProperty, "ColorObjectGray4");
             BorderFinalMixer.SetBinding(ColorMixer.ColorARatioProperty, new Binding(nameof(ColorMixer.ColorARatio)) { Source = ForeFinalMixer, UpdateSourceTrigger = UpdateSourceTrigger.PropertyChanged, Mode = BindingMode.OneWay });
             this.SetBinding(BorderColorProperty, new Binding(nameof(ColorMixer.ColorResult)) { Source = BorderFinalMixer, UpdateSourceTrigger = UpdateSourceTrigger.PropertyChanged, Mode = BindingMode.OneWay });
-            BorderFinalMixer.ColorARatio = 0;
         }
 
         public override void OnApplyTemplate()
@@ -140,7 +139,7 @@ namespace PCL.CS.Controls
             AnimScaleTransform.SetBinding(ScaleTransform.ScaleXProperty, new Binding(nameof(OverAnimScale)) { Source = this, UpdateSourceTrigger = UpdateSourceTrigger.PropertyChanged, Mode = BindingMode.OneWay });
             AnimScaleTransform.SetBinding(ScaleTransform.ScaleYProperty, new Binding(nameof(OverAnimScale)) { Source = this, UpdateSourceTrigger = UpdateSourceTrigger.PropertyChanged, Mode = BindingMode.OneWay });
 
-            PartBorder.RenderTransform = new TransformGroup { Children = { BorderScaleTransform,AnimScaleTransform } };
+            PartBorder.RenderTransform = new TransformGroup { Children = { BorderScaleTransform, AnimScaleTransform } };
 
             var InnerScaleTransform = new ScaleTransform();
             InnerScaleTransform.SetBinding(ScaleTransform.ScaleXProperty, new Binding(nameof(DotScale)) { Source = this, UpdateSourceTrigger = UpdateSourceTrigger.PropertyChanged, Mode = BindingMode.OneWay });
@@ -242,17 +241,17 @@ namespace PCL.CS.Controls
                 _MouseOver = IsMouseOver;
                 MouseOverAnimation?.StopAnimation();
                 if (IsMouseOver)
-                    MouseOverAnimation = new DoubleAnimation(ForeColorMixer, ColorMixer.ColorARatioProperty, ForeColorMixer.ColorARatio, 1, 150*UseAnim, 0);
+                    MouseOverAnimation = new DoubleAnimation(ForeColorMixer, ColorMixer.ColorARatioProperty, ForeColorMixer.ColorARatio, 1, 150 * UseAnim, 0);
                 else
                     MouseOverAnimation = new DoubleAnimation(ForeColorMixer, ColorMixer.ColorARatioProperty, ForeColorMixer.ColorARatio, 0, 150 * UseAnim, 0);
                 MouseOverAnimation.StartAnimation();
             }
-            if(IsMouseDown != _MouseDown)
+            if (IsMouseDown != _MouseDown)
             {
                 _MouseDown = IsMouseDown;
                 MouseDownAnimation?.StopAnimation();
                 if (IsMouseDown)
-                    MouseDownAnimation = new DoubleAnimation(this, OverAnimScaleProperty, OverAnimScale, 0.92, 600 * UseAnim, 0,new AniEaseOutFluent(4));
+                    MouseDownAnimation = new DoubleAnimation(this, OverAnimScaleProperty, OverAnimScale, 0.92, 600 * UseAnim, 0, new AniEaseOutFluent(4));
                 else
                     MouseDownAnimation = new DoubleAnimation(this, OverAnimScaleProperty, OverAnimScale, 1, 300 * UseAnim, 0, new AniEaseOutFluent(4));
                 MouseDownAnimation.StartAnimation();
@@ -274,38 +273,7 @@ namespace PCL.CS.Controls
         }
 
 
-        public bool CanAutoUnSelect
-        {
-            get { return (bool)GetValue(CanAutoUnSelectProperty); }
-            set { SetValue(CanAutoUnSelectProperty, value); }
-        }
-
-        // Using a DependencyProperty as the backing store for CanAutoUnSelect.  This enables animation, styling, binding, etc...
-        public static readonly DependencyProperty CanAutoUnSelectProperty =
-            DependencyProperty.Register(nameof(CanAutoUnSelect), typeof(bool), typeof(MyCheckableBox), new PropertyMetadata(false));
-
-
-        public MyRadioGroup RadioGroup
-        {
-            get { return (MyRadioGroup)GetValue(RadioGroupProperty); }
-            set { SetValue(RadioGroupProperty, value); }
-        }
-
-        // Using a DependencyProperty as the backing store for RadioGroup.  This enables animation, styling, binding, etc...
-        public static readonly DependencyProperty RadioGroupProperty =
-            DependencyProperty.Register(nameof(RadioGroup), typeof(MyRadioGroup), typeof(MyCheckableBox), new PropertyMetadata((s, e) => (s as MyCheckableBox)?.OnRadioGroupChanged(e)));
-
-        private void OnRadioGroupChanged(DependencyPropertyChangedEventArgs e)
-        {
-            (e.OldValue as MyRadioGroup)?.RemoveChild(this);
-            (e.NewValue as MyRadioGroup)?.AddChild(this);
-        }
-        public static readonly RoutedEvent ClickEvent = MyButton.ClickEvent;
-        public event RoutedEventHandler Click
-        {
-            add => AddHandler(ClickEvent, value);
-            remove => RemoveHandler(ClickEvent, value);
-        }
+        protected abstract bool CanAutoUnSelect { get; }
         public static readonly RoutedEvent CheckedEvent = MyRadioButton.CheckedEvent;
         public event RoutedEventHandler Checked
         {
@@ -334,6 +302,7 @@ namespace PCL.CS.Controls
                 {
                     PartDot.Opacity = value ? 1 : 0;
                     DotScale = value ? 1 : 0.2;
+                    BorderColorMixer.ColorARatio = value ? 1 : 0;
                 }
                 return;
             }
@@ -346,12 +315,14 @@ namespace PCL.CS.Controls
         {
             //Base.Log($"播放{(IsChecked ? "点击" : "取消")}动画");
             double UseAnim = this.IsVisible ? 1 : 0;
+            const double CheckAnimLenth = 100;
             CheckAnimation?.StopAnimation();
             CheckAnimation = new AnimationGroup();
             if (IsChecked)
             {
-                CheckAnimation.Add(new DoubleAnimation(this, BorderScaleProperty, BorderScale, 0.7, 150* UseAnim, 0, new AniEaseOutFluent(2)));
-                CheckAnimation.Add(new DoubleAnimation(this, BorderScaleProperty, 0.7, 1, 300 * UseAnim, 150 * UseAnim, new AniEaseInOut(new AniEaseInFluent(2), new AniEaseOutBack(3), 0.06, 0.1)));
+                CheckAnimation.Add(new DoubleAnimation(this, BorderScaleProperty, BorderScale, 0.7, CheckAnimLenth * UseAnim, 0, new AniEaseOutFluent(2)));
+                CheckAnimation.Add(new DoubleAnimation(this, BorderScaleProperty, 0.7, 1.1, CheckAnimLenth * 1.8 * UseAnim, CheckAnimLenth * UseAnim, new AniEaseInOut(new AniEaseInFluent(2), new AniEaseOutFluent(2))));
+                CheckAnimation.Add(new DoubleAnimation(this, BorderScaleProperty, 1.1, 1, CheckAnimLenth * 0.3 * Math.PI * UseAnim, CheckAnimLenth * 2.8 * UseAnim, new AniEaseSine()));
                 CheckAnimation.Add(new DoubleAnimation(this, DotScaleProperty, DotScale, 1, 390 * UseAnim, 0, new AniEaseOutBack(3)));
                 CheckAnimation.Add(new DoubleAnimation(this, DotOpacityProperty, DotOpacity, 1, 75 * UseAnim, 20 * UseAnim));
                 CheckAnimation.Add(new DoubleAnimation(BorderColorMixer, ColorMixer.ColorARatioProperty, BorderColorMixer.ColorARatio, 1, 150 * UseAnim, 0));

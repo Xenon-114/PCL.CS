@@ -34,7 +34,7 @@ namespace PCL.CS.Pages
         /// <param name="Index">页面编号（从0开始）</param>
         public static void ChangePage(int Index)
         {
-            if (Index > Pages.Count) return;
+            if (Index >= Pages.Count) return;
             MyPageTemplate Page = Pages[Index];
             OnPageChanged?.Invoke(null, Index);
             Main.MainWnd.ChangePageLeft(Page.PageLeft);
@@ -54,7 +54,7 @@ namespace PCL.CS.Pages
         }
         private static void ChangePageNoStack(int Index)
         {
-            if (Index > Pages.Count) return;
+            if (Index >= Pages.Count) return;
             MyPageTemplate Page = Pages[Index];
             OnPageChanged?.Invoke(null, Index);
             Main.MainWnd.ChangePageLeft(Page.PageLeft);
@@ -68,6 +68,7 @@ namespace PCL.CS.Pages
             {
                 Main.MainWnd.TitleLeftChange(false, "");
                 PagesStack.Clear();
+                PagesStack.Push(Index);
             }
         }
         /// <summary>

@@ -4,8 +4,7 @@
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
              xmlns:local="clr-namespace:PCL.CS.Controls"
-             mc:Ignorable="d" 
-             d:DesignHeight="450" d:DesignWidth="800">
+             mc:Ignorable="d" d:DesignWidth="800">
     <Grid>
         <local:MyScrollViewer x:Name="MainAScrollViewer">
             <StackPanel x:Name="MainScrollViewer">
@@ -24,20 +23,23 @@
                         <local:MyLoading Margin="20,0,20,0" />
                     </local:MyBorder>
                     <local:MyBorder Grid.Column="1" Margin="20">
-                        <local:MyComboBox HorizontalAlignment="Center" Width="200" IsEditable="True" ToolTip="abc" VerticalAlignment="Center">
-                            <local:MyComboBoxItem Content="这个东西可以选择"/>
-                            <local:MyComboBoxItem Content="而且是互斥的"/>
-                            <local:MyComboBoxItem Content="可以装很多..."/>
-                            <local:MyComboBoxItem Content="很多很多..."/>
-                            <local:MyComboBoxItem Content="很多很多..."/>
-                            <local:MyComboBoxItem Content="很多很多..."/>
-                            <local:MyComboBoxItem Content="很多很多..."/>
-                            <local:MyComboBoxItem Content="很多很多..."/>
-                            <local:MyComboBoxItem Content="很多很多..."/>
-                            <local:MyComboBoxItem Content="很多很多..."/>
-                            <local:MyComboBoxItem Content="很多很多..."/>
-                            <local:MyComboBoxItem Content="...的东西"/>
-                        </local:MyComboBox>
+                        <StackPanel VerticalAlignment="Center">
+                            <local:MyComboBox HorizontalAlignment="Center" Width="200" IsEditable="True" ToolTip="abc" VerticalAlignment="Center">
+                                <local:MyComboBoxItem Content="这个东西可以选择"/>
+                                <local:MyComboBoxItem Content="而且是互斥的"/>
+                                <local:MyComboBoxItem Content="可以装很多..."/>
+                                <local:MyComboBoxItem Content="很多很多..."/>
+                                <local:MyComboBoxItem Content="很多很多..."/>
+                                <local:MyComboBoxItem Content="很多很多..."/>
+                                <local:MyComboBoxItem Content="很多很多..."/>
+                                <local:MyComboBoxItem Content="很多很多..."/>
+                                <local:MyComboBoxItem Content="很多很多..."/>
+                                <local:MyComboBoxItem Content="很多很多..."/>
+                                <local:MyComboBoxItem Content="很多很多..."/>
+                                <local:MyComboBoxItem Content="...的东西"/>
+                            </local:MyComboBox>
+                            <local:MyTextBox Width="200" Margin="5" x:Name="TestBlock"/>
+                        </StackPanel>
                     </local:MyBorder>
                 </Grid>
                 <local:MyCard Margin="20,0,20,20" Title="卡片" CanSwap="True" IsSwapped="False">
@@ -60,7 +62,9 @@
                         <local:MyImage Source="{DynamicResource Image.Icon.svg}"/>
                         <local:MyTextBox Hint="abc" IsEnabled="False"/>
                         <local:MyListItem Height="50" AutoCheck="True"/>
-                        <local:MyCheckableBox Text="这是个测试"/>
+                        <local:MyCheckBox Text="这是个测试"/>
+                        <local:MyRadioBox Text="这是个测试"/>
+                        <local:MySlider ToolTip="def" MaxValue="5" Value="1" ValueToolTip="你拖动了"/>
                     </StackPanel>
                 </local:MyCard>
             </StackPanel>

@@ -107,8 +107,8 @@ namespace PCL.CS.Controls
                     HoroOffset = 0;
                     break;
             }
-            VertOffset -= VerticalOffset * arrangeSize.Height;
-            HoroOffset -= HorizontalOffset * arrangeSize.Width;
+            VertOffset += VerticalOffset * ((1 - HeightRatio) * arrangeSize.Height / 2);
+            HoroOffset += HorizontalOffset * ((1 - WidthRatio) * arrangeSize.Width / 2);
 
             Child.Arrange(new Rect(new Point(HoroOffset, VertOffset), ChildSize));
             return arrangeSize;
